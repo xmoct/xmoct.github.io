@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://xmoct.github.io/</id>
-    <title>MTcx&apos;s note</title>
-    <updated>2020-06-13T06:43:25.900Z</updated>
+    <title>MTcx</title>
+    <updated>2020-06-13T07:02:49.219Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://xmoct.github.io/"/>
     <link rel="self" href="https://xmoct.github.io/atom.xml"/>
-    <subtitle>不愿沉睡的小十六</subtitle>
+    <subtitle>MTcx&apos;s blog</subtitle>
     <logo>https://xmoct.github.io/images/avatar.png</logo>
     <icon>https://xmoct.github.io/favicon.ico</icon>
-    <rights>All rights reserved 2020, MTcx&apos;s note</rights>
+    <rights>All rights reserved 2020, MTcx</rights>
     <entry>
         <title type="html"><![CDATA[Hello Gridea]]></title>
         <id>https://xmoct.github.io/post/hello-gridea/</id>
