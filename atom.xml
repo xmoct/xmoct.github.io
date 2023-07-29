@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://xmoct.github.io</id>
+    <title>Moyv_blog</title>
+    <updated>2023-07-29T05:39:37.083Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://xmoct.github.io"/>
+    <link rel="self" href="https://xmoct.github.io/atom.xml"/>
+    <subtitle>生前何必久睡，死后必定长眠</subtitle>
+    <logo>https://xmoct.github.io/images/avatar.png</logo>
+    <icon>https://xmoct.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, Moyv_blog</rights>
+    <entry>
+        <title type="html"><![CDATA[逻辑漏洞]]></title>
+        <id>https://xmoct.github.io/post/gFF8jESS-/</id>
+        <link href="https://xmoct.github.io/post/gFF8jESS-/">
+        </link>
+        <updated>2023-07-28T09:34:00.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[3. 信息收集]]></title>
+        <id>https://xmoct.github.io/post/gx8T_8GeP/</id>
+        <link href="https://xmoct.github.io/post/gx8T_8GeP/">
+        </link>
+        <updated>2023-07-28T09:26:26.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[实战SRC挖掘]]></title>
+        <id>https://xmoct.github.io/post/7-rpwCJ5H/</id>
+        <link href="https://xmoct.github.io/post/7-rpwCJ5H/">
+        </link>
+        <updated>2023-07-28T09:20:45.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[自动化扫描工具]]></title>
+        <id>https://xmoct.github.io/post/Q0fCuf4Xl/</id>
+        <link href="https://xmoct.github.io/post/Q0fCuf4Xl/">
+        </link>
+        <updated>2023-07-28T08:57:55.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[命令执行和代码执行]]></title>
+        <id>https://xmoct.github.io/post/0sWKZajVF/</id>
+        <link href="https://xmoct.github.io/post/0sWKZajVF/">
+        </link>
+        <updated>2023-07-27T09:57:51.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[文件上传和文件包含]]></title>
+        <id>https://xmoct.github.io/post/9wK7KUt6d/</id>
+        <link href="https://xmoct.github.io/post/9wK7KUt6d/">
+        </link>
+        <updated>2023-07-27T09:23:18.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[跨站脚本攻击]]></title>
+        <id>https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/</id>
+        <link href="https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/">
+        </link>
+        <updated>2023-07-26T08:23:23.000Z</updated>
+        <summary type="html"><![CDATA[<h1 id="xss">XSS</h1>
+<h2 id="简述">简述</h2>
+<p>Cross-Site Scripting 简称为“CSS”，为避免与前端叠成样式表的缩写&quot;CSS&quot;冲突，故又称XSS。它是指恶意攻击者往web页面中插入恶意script代码，当用户浏览该页面时，嵌入其中的script代码被执行，从而达到恶意攻击用户的目的</p>
+]]></summary>
+        <content type="html"><![CDATA[<h1 id="xss">XSS</h1>
+<h2 id="简述">简述</h2>
+<p>Cross-Site Scripting 简称为“CSS”，为避免与前端叠成样式表的缩写&quot;CSS&quot;冲突，故又称XSS。它是指恶意攻击者往web页面中插入恶意script代码，当用户浏览该页面时，嵌入其中的script代码被执行，从而达到恶意攻击用户的目的</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[C++编程2]]></title>
+        <id>https://xmoct.github.io/post/cbian-cheng-2/</id>
+        <link href="https://xmoct.github.io/post/cbian-cheng-2/">
+        </link>
+        <updated>2023-07-25T09:28:22.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[C++编程1]]></title>
+        <id>https://xmoct.github.io/post/cbian-cheng/</id>
+        <link href="https://xmoct.github.io/post/cbian-cheng/">
+        </link>
+        <updated>2023-07-25T06:34:45.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[CDN绕过]]></title>
+        <id>https://xmoct.github.io/post/cdn-rao-guo/</id>
+        <link href="https://xmoct.github.io/post/cdn-rao-guo/">
+        </link>
+        <updated>2023-07-25T04:52:49.000Z</updated>
+    </entry>
+</feed>

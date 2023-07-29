@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="渗透
+
+渗透的本质是信息收集（外网：资产，内网：网段、密码）
+攻防的体系是知识点的串联（ATT&amp;CK）
+https://blog.csdn.net/qq_40216188/article/details/123106969
+
+打点
+..." />
+    <meta name="keywords" content="" />
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    <!-- 代码渲染风格css -->
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <!-- 代码高亮插件 -->
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <!-- 代码复制插件 -->
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <!-- live2d插件 -->
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <!-- 数学公式 -->
+    
+    <title>HW渗透测试</title>
+
+    <!-- 大纲索引css调整 -->
+    
+    <style>
+        .markdownIt-TOC {
+            margin-left: 28%;
+            padding-left: 2px;
+            width: 80%;
+        }
+
+        .markdownIt-TOC li {
+            padding-left: 8%;
+        }
+    </style>
+    
+</head>
+
+<body>
+    <div id="landlord">
+        <div class="message" style="opacity:0"></div>
+        <canvas id="live2d" width="240" height="250" class="live2d"></canvas>
+    </div>
+    <div id="domainname" style="display:none">https://xmoct.github.io</div>
+    <div id="content">
+        <div>
+            <!----------- 移动端导航栏👇 ----------------->
+            <div id="bar">
+                <style>
+  .navmobile {
+    z-index: 15;
+    max-height: 40vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  @media screen and (max-width: 1200px) {
+    .navbar {
+      max-width: 100vw;
+    }
+  }
+
+  @media screen and (max-width:1200px) and (min-width: 768px) {
+    @media (min-width: 768px) {
+      .navbar-nav {
+        float: right;
+        margin: 0;
+      }
+    }
+  }
+
+  @media screen and (max-width:768px) {
+    .mbapspan {
+      padding: 0;
+    }
+  }
+</style>
+<div class="pjaxloading"  onclick="pjaxloadingClose()">
+  <div class="loadingbackground"></div>
+  <div id="loading">
+    <div class="loading">
+    </div>
+  </div>
+</div>
+<nav class="navbar navbar-inverse navbar-fixed-top navmobile">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#barmenu"
+        aria-expanded="false" id="barbutton">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a data-pjax class="navbar-brand" style="color:white" href="https://xmoct.github.io">Moyv_blog&nbsp;&nbsp;|</a>
+      <span class="navbar-brand mbapspan"><i id="mbaplayer" class="fa fa-play-circle-o" aria-hidden="true"
+          style="font-size: 28px;top: 12px;position: absolute;" onclick="aplayerPlay();"></i></span>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="barmenu">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a data-pjax href="/" style="color:white">
+            首页
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/archives" style="color:white">
+            归档
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/tags" style="color:white">
+            标签
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/post/about" style="color:white">
+            关于
+          </a>
+        </li>
+        
+        
+        
+        
+          
+        <li><a data-pjax href="https://xmoct.github.io/friends" style="color:white">友链</a></li>
+
+        
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+
+  <!-- 引入jQuery核心js文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+  <script>
+    let btstate = false;
+    var bt = $("#barbutton");
+    var bm = $("#barmenu");
+    bt.click(function () {
+      dropdown();
+    })
+    function dropdown() {
+      console.log(btstate);
+      //下拉
+      if (btstate == false) {
+        bt.removeClass("collapsed");
+        bt.attr("aria-expanded", "true");
+        bm.attr("aria-expanded", "true")
+        bm.fadeIn(700);
+        btstate = true;
+      }
+      else {
+        bt.addClass("collapsed");
+        bt.attr("aria-expanded", "false");
+        bm.removeClass("in");
+        bm.hide();
+        bm.attr("aria-expanded", "false");
+        btstate = false;
+      }
+    }
+  </script> 
+            </div>
+            <!----------- 移动端导航栏👆 ----------------->
+
+            <!--------------- pc端菜单栏👇 ---------------->
+            <div class="side"><head>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- fancybox -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+
+
+    <!--------- 数学公式👇---- -->
+    
+    <!--------- 数学公式👆----------------- -->
+    <!--------- daovocie功能👇 ------------------->
+    
+    <!--------- daovocie功能👆 ------------------->
+    <!-- -----------------twikoo评论系统引入👇 --------->
+    <script src="https://cdn.jsdelivr.net/npm/twikoo@1.3.1/dist/twikoo.all.min.js"></script>
+    <!-- -----------------twikoo评论系统引入👆 --------->
+    <!---------------- leancloud api 功能依赖引入👇 -------->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script>
+    <!---------------- leancloud api 功能依赖引入👆 -------->
+    <!------------------ valine评论系统引入👇 ------------------>
+    <script src="https://xmoct.github.io/media/js/valine.min.js"></script>
+    <!------------------ valine评论系统引入👆 ------------------>
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+    <!---------------- 今日诗词api功能依赖👆 ----------------------->
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/ispeak-bber/ispeak-bber.min.js" charset="utf-8"></script>
+    <!---------------- 哔哔功能依赖👆 ----------------------->
+
+
+</head>
+
+<style>
+    body {
+        overflow-x: hidden;
+        height: 100vh;
+        overflow-y: scroll;
+        cursor: url("https://xmoct.github.io/media/images/mouse_cursor.png"), auto
+    }
+</style>
+
+<body>
+    <!--=------ 页面加载动态画面👇 --------------->
+    <div class="pjaxloading" onclick="pjaxloadingClose()">
+        <div class="loadingbackground"></div>
+        <div id="loading-aname">
+            <div class="loading-aname">
+            </div>
+        </div>
+    </div>
+    <!--=------ 页面加载动态画面👆 --------------->
+
+    <!--------------- 左侧菜单栏👇 ------------------------>
+    
+    <div id=side>
+        <div class="r_m_div">
+            <a onclick="showAaplayer()"><i style="font-size: 20px;"><img
+                        src='https://xmoct.github.io/media/images/music.png' alt="音乐播放器" class="musicbtn"></i></a>
+        </div>
+        <div class="avatar-border">
+            <img src="https://xmoct.github.io/images/avatar.png?v=1690609173162" class="avatar">
+        </div>
+        <div class="sitename">Moyv_blog</div>
+        <span class="description" data-text='["生前何必久睡，死后必定长眠"]'>&nbsp;</span>
+        <div class="siteinfocontainer">
+            <span class="siteinfo">文章</span>
+            <span class="siteinfo">标签</span>
+        </div>
+        <div class="siteinfocontainer">
+            <span class="siteinfo" id="siteinfo-postsnum"></span>
+            <span class="siteinfo">5</span>
+        </div>
+        
+        <div class="search">
+            <!-- <input type="text" class="search-input" placeholder="标题搜索(●'◡'●)" /> -->
+            <input type="text" class="search-input" placeholder="标题搜索 ⚆_⚆ つ♡">
+            <div class="search-results"></div>
+        </div>
+        
+    <div class="share-button">
+        <span></span>
+        
+        
+        
+        
+        
+        
+        
+        
+    </div>
+    <div id="qq" style="display:none"></div>
+    <!------------ 加载菜单按钮👇 ------------------------->
+    <div class="menucontainer">
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="首页"></i>&nbsp;<span
+                    data-text="首页">首页</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/archives" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="归档"></i>&nbsp;<span
+                    data-text="归档">归档</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/tags" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="标签"></i>&nbsp;<span
+                    data-text="标签">标签</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/post/about" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="关于"></i>&nbsp;<span
+                    data-text="关于">关于</span>
+            </a>
+        </div>
+        
+        
+
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="https://xmoct.github.io/friends" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="友人帐"></i>&nbsp;<span data-text="友人帐">友人帐</span>
+            </a>
+        </div>
+        
+        <!--  -->
+    </div>
+    <!------------ 加载菜单按钮👆 ------------------------->
+    <hr>
+    <style>
+    .copyright {
+        font-size: 15px;
+        color: #d9d9d9;
+    }
+
+
+    @media screen and (min-width: 1200px) {
+        .foot {
+            width: 100%;
+            height: 130px;
+        }
+    }
+
+    @media screen and (max-width: 1200px) {
+        .foot {
+            display: none;
+        }
+    }
+</style>
+
+<body>
+    <div class="foot">
+        <div id="footinfo">Powered by <a href="https://github.com/xmoct" target="_blank">墨羽</a> | Theme: <a
+                href="https://github.com/850552586/gridea-theme-fog">Fog</a>
+            <div>
+                
+            </div>
+            <div>
+                
+            </div>
+            <div class="copyright" style="color:white;text-align: center;">Copyright © 2020  备案号: 鄂ICP备...号
+            </div>
+        </div>
+
+
+
+    </div>
+</body>
+
+    </div>
+
+    <img class="moon" src="https://xmoct.github.io/media/images/moon.png" onclick="moonlight()">
+    <script src="https://xmoct.github.io/media/js/wordshow.js"></script>
+    
+    <!--------------- 左侧菜单栏👆 ------------------------>
+
+    <!----------------- 顶部菜单栏👇 ------------------------>
+    
+    <!----------------- 顶部菜单栏👆 ------------------------>
+
+<!--核心功能加载-->
+<script src="https://xmoct.github.io/media/js/mainfunc.js"></script>
+
+<!------------- Fog1.0版本彩蛋👇 -------------->
+    <!-- <section id="terrestrial" class="popup">
+        <a href="#" class="back">&lt; back</a>
+    </section>
+
+    <div class="flycontainer">
+        <div class="flyword">御风飞行中...</div>
+    </div>
+
+    <script>
+        $("#fog_go").click(function(){fog_go()});
+        async function fog_go(){
+            $(".bars").hide()
+            $("#live2d").hide()
+            await sleep(3000);
+            $(".flycontainer").css("display","flex");
+            $(".popup").fadeOut(500)
+            await sleep(2000);
+            var sitename = "Moyv_blog";
+            getFogUser(sitename);
+        }
+
+        function fog_goregis(){
+            var sitename = "Moyv_blog";
+            var siteurl = "https://xmoct.github.io";
+            regisFogUser(sitename,siteurl);
+        }
+        fog_goregis();
+    </script> -->
+<!------------- Fog1.0版本彩蛋👆 -------------->
+<script>
+    function change_topmenu(){
+        tmcolor = "antiquewhite"
+        tsnamecolor = "antiquewhite"
+        $(".navbar-inverse .navbar-nav>li>a").css("color",tmcolor)
+        $(".navbar-inverse .navbar-brand").css("color",tsnamecolor)
+        $(".navbar-fixed-top").css("border-radius","0 0 10px 10px")
+    }
+</script>
+
+<!------ 根据自定义配置声明变量👇 --------------------->
+    
+    <script>
+        var postnumChoice = false
+    </script>
+    
+    
+    <script>
+        var shareChoice = false
+    </script>
+    
+    
+    <script>
+        var donateChoice = false
+    </script>
+    
+    
+    <script>
+        var searchChoice = true
+    </script>
+    
+    <script>let postsnum = 0;</script>
+    <div id="side-posttitle" style="display: none;">
+    
+    
+    逻辑漏洞
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    3. 信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    实战SRC挖掘
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    自动化扫描工具
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    命令执行和代码执行
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    文件上传和文件包含
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    跨站脚本攻击
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程2
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程1
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    CDN绕过
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    权限维持
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    代码审计
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    主动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    被动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    关于
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Hello Gridea 
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    </div>
+    
+        <script>
+            var menupos = 'left';
+            $("#siteinfo-postsnum").html(postsnum);
+        </script>
+    
+    <script>
+        let commentsHide = false
+    </script>
+    <!------ 根据自定义配置声明变量👆 --------------------->
+
+
+    <!----------根据自定义配置设置图标信息👇---------->
+    <script>
+        var icondict = new Array();
+    </script>
+    
+        
+    
+    <!----------根据自定义配置设置图标信息👆---------->
+</body>
+
+<script src="https://xmoct.github.io/media/share/dist/Share.js"></script>
+<!-- 页面pjax测试 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery.pjax/2.0.1/jquery.pjax.js"></script>
+<!--确保jQuery已经在此之前加载-->
+<!-- <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script> -->
+<script src="https://xmoct.github.io/media/js/all-pjax.js"></script>
+<script>
+    //-------------------------------说说功能👇--------------------------------------
+    let talksall = [];
+    let talks = [];
+    let talkindex = 0;
+    get();
+
+    function get() {
+        var t = JSON.parse('[]');
+        talkindex = t.length - 1;
+        for (var i = 0; i <= t.length - 1; i++) {
+            var d = {};
+            d["time"] = t[i].time;
+            d["author"] = t[i].author;
+            d["text"] = t[i].text;
+            d["img"] = t[i].img;
+            talksall.push(d);
+        }
+    }
+
+    function add() {
+        for (var i = talkindex; i >= 0 && i > talkindex - 3; i--) {
+            talks.push(talksall[i]);
+        }
+        talkindex = (talkindex - 3) >= 0 ? (talkindex - 3) : -1;
+        if (talkindex < 0) $("#getmorebt").hide();
+        show();
+    }
+
+    function show() {
+        var talkT = document.getElementById("talkContainer");
+        talkT.innerHTML = "";
+        for (var i = 0; i < talks.length; i++) {
+            if (talks[i].img != '') {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <span data-fancybox="images" href="' + talks[i].img + '"><img src="' + talks[i].img + '" class="talkimg"></span> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            } else {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            }
+        }
+    }
+    //-------------------------------说说功能👆--------------------------------------
+</script>
+
+<!---->
+<script>
+    function replaceAvatar() {
+        twikoo_avatar = $(".tk-avatar-img");
+        for (var i = 0; i < twikoo_avatar.length; i++) {
+            var asrc = twikoo_avatar.eq(i).attr('src');
+            if (asrc.search('cn.gravatar.com') != -1) {
+                twikoo_avatar.eq(i).attr('src', 'https://xmoct.github.io/media/images/comavatar.png');
+            }
+        }
+    }
+
+    function showWechat() {
+        var wechat = '';
+        alert("博主微信号：" + wechat);
+        return false;
+    }
+</script>
+
+<script>
+    /**
+     * https://github.com/tangkaichuan/gridea-search
+     */
+    // 检查缓存是否最新
+    function checkCache() {
+        var caches_postsnum = localStorage.getItem("postsnum");
+        var pt = document.getElementById("side-posttitle").innerHTML;
+        pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "")
+        var ptlen = pt.length;
+        var ptlen_storage = localStorage.getItem("poststitlelen");
+        if (caches_postsnum != postsnum || ptlen != ptlen_storage) {
+            console.log("更新缓存");
+            return false
+        }
+        return true;
+    }
+
+    (function () {
+        var CACHES = checkCache()
+        if (!CACHES) {
+            var NOW = Date.now()
+            var API_CONTENT = '../api-content/index.html' + '?_=' + NOW
+            preload(API_CONTENT);
+            getContents(show_getContentresult);
+        }
+
+        function show_getContentresult(data) {
+            console.log("获取成功");
+            var postslen = data["posts"].length;
+            localStorage.setItem('postsnum', postslen);
+            var poststitlelen = 0;
+            var pt = document.getElementById("side-posttitle").innerHTML;
+            pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "");
+            localStorage.setItem('poststitlelen', pt.length);
+        }
+
+
+
+        // preload
+        function preload(url) {
+            var preloadLink = document.createElement('link')
+            preloadLink.href = url
+            preloadLink.rel = 'preload'
+            preloadLink.as = 'fetch'
+            preloadLink.crossOrigin = 'anonymous'
+            document.head.appendChild(preloadLink)
+        }
+
+        // 异步 GET 请求
+        function get(obj) {
+            var xhr = new XMLHttpRequest()
+            xhr.open('get', obj.url, true)
+            xhr.send(null)
+            xhr.onreadystatechange = function () {
+                // 异步请求：响应状态为4，数据加载完毕
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        obj.success(xhr.responseText)
+                    } else {
+                        obj.error(xhr.status)
+                    }
+                }
+            }
+        }
+
+        // 获取博客全文 api
+        function getContents(callback) {
+            if (CACHES) {
+                callback(CACHES.contents)
+            } else {
+                get({
+                    url: API_CONTENT,
+                    success: function (data) {
+                        callback(JSON.parse(data));
+                        localStorage.setItem('ContentsCache', data);
+                        getStorageContent();
+                    }
+                })
+            }
+        }
+    })()
+    //------------------------核心功能--pjax全局渲染👇-------------------
+    let talkinit = false;
+    $(document).pjax('a[data-pjax]', '#main', {
+        fragment: '#main',
+        timeout: 8000
+    }).on('pjax:complete', function () {
+        //代码块高亮渲染
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+        //文章热度
+        if(postnumChoice){
+            getHotnum();
+        }
+        //文章索引
+        toginit();
+        //清空搜索栏
+        if (searchChoice) {
+            searchInit();
+            searchInput.value = "";
+        }
+        var pl = window.location.pathname;
+        //说说更新
+        if (pl.search("talk") != -1 && !talkinit) {
+            add();
+            talkinit = true;
+        } else if (pl.search("talk") != -1) {
+            show();
+        }
+        if (pl.search("post") != -1) {
+            if (shareChoice)
+                shareInit();
+            if (donateChoice)
+                donateInit();
+            if ("default" == "default"&&!commentsHide) {
+                $("#comment").hide()
+                commentsHide = true
+            }
+            lazyload();
+            codeinit();
+            if ("default" == "twikoo") {
+                //twikoo头像更换
+                setTimeout(replaceAvatar, 3000);
+                setTimeout(replaceAvatar, 8000); //部分博主站点速度加载过慢，再添加一个延迟
+            }
+        }
+        if (btstate == true)
+            dropdown();
+    }).on('pjax:start', function () {
+        $(".pjaxloading").fadeIn(50);
+    }).on('pjax:end', function () {
+        $(".pjaxloading").fadeOut(50);
+    });
+    //------------------------核心功能--pjax全局渲染👆-------------------
+
+    //-------------------------------------------------搜索
+    // 获取搜索框、搜索按钮、清空搜索、结果输出对应的元素
+    if (searchChoice) {
+        var searchInput = document.querySelector('.search-input');
+        var searchResults = document.querySelector('.search-results');
+    }
+    // 申明保存文章的标题、链接、内容的数组变量
+    var searchValue = '',
+        arrItems = [],
+        arrLinks = [],
+        arrTitles = [],
+        arrContents = [],
+        arrResults = [],
+        indexItem = [],
+        itemLength = 0;
+    var tmpDiv = document.createElement('div');
+    tmpDiv.className = 'result-item';
+
+
+    function getStorageContent() {
+        var data = localStorage.getItem('ContentsCache');
+        data = JSON.parse(data);
+        posts = data["posts"];
+        for (var i = 0; i < posts.length; i++) {
+            arrLinks[i] = posts[i].link;
+            arrTitles[i] = posts[i].title;
+            arrContents[i] = posts[i].content;
+            itemLength++;
+        }
+    }
+    if (checkCache())
+        getStorageContent();
+    // 输入框内容变化后就开始匹配，可以不用点按钮
+    // 经测试，onkeydown, onchange 等方法效果不太理想，
+    // 存在输入延迟等问题，最后发现触发 input 事件最理想，
+    // 并且可以处理中文输入法拼写的变化
+    searchInput.oninput = function () {
+        setTimeout(searchConfirm, 0);
+    }
+    searchInput.onfocus = function () {
+        searchResults.style.display = 'block';
+    }
+
+    function searchConfirm() {
+        if (searchInput.value == '') {
+            searchResults.style.display = 'none';
+        } else if (searchInput.value.search(/^\s+$/) >= 0) {
+            // 检测输入值全是空白的情况
+            searchInit();
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '请输入有效内容...';
+            searchResults.appendChild(itemDiv);
+        } else {
+            // 合法输入值的情况
+            searchInit();
+            searchValue = searchInput.value;
+            // 在标题、内容中查找
+            searchMatching(arrTitles, arrContents, searchValue);
+        }
+    }
+
+    // 每次搜索完成后的初始化
+    function searchInit() {
+        arrResults = [];
+        indexItem = [];
+        searchResults.innerHTML = '';
+        searchResults.style.display = 'block';
+    }
+
+    function searchMatching(arr1, arr2, input) {
+        // 忽略输入大小写
+        input = new RegExp(input, 'i');
+        var step = 10;
+        // 在所有文章标题、内容中匹配查询值
+        for (i = 0; i < itemLength; i++) {
+            var indexContent = arr2[i].search(input);
+            //标题匹配
+            if (arr1[i].search(input) != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+                if (indexContent != -1) {
+                    startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                    var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                    arrResults.push("....." + searchcontent + ".....");
+                } else
+                    arrResults.push("");
+            }
+            //内容匹配
+            else if (indexContent != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+
+                startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                arrResults.push("....." + searchcontent + ".....");
+            }
+        }
+
+        // 输出总共匹配到的数目
+        var totalDiv = tmpDiv.cloneNode(true);
+        totalDiv.innerHTML = '<b>总匹配：' + indexItem.length + ' 项<hr></b>';
+        searchResults.appendChild(totalDiv);
+
+        // 未匹配到内容的情况
+        if (indexItem.length == 0) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '未匹配到内容...';
+            searchResults.appendChild(itemDiv);
+        }
+
+        // 将所有匹配内容进行组合
+        for (i = 0; i < arrResults.length; i++) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerHTML = '<a data-pjax class="searchresults" href="' + arrLinks[indexItem[i]] + '"><b>[' +
+                arrTitles[indexItem[i]] +
+                ']</b><p>' + arrResults[i] + '</p></a><hr />';
+            searchResults.appendChild(itemDiv);
+        }
+    }
+</script>
+
+
+
+<!--------------------- 菜单栏图标加载功能👇 ----------------------->
+<script>
+var menulist = $(".menuicon");
+var menulength = menulist.length;
+for (var i = 0; i < menulength; i++) {
+    var altname = menulist.eq(i).attr("alt");
+    var iconurl = icondict[altname];
+    if (iconurl == undefined || iconurl == '')
+        continue;
+    if (iconurl == 'Home') {
+        menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Home.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Archive') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Archive.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Tag') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Tag.png");
+menulist.eq(i).show();
+} else if (iconurl == 'About') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/About.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Talk') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Talk.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Friends') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Friends.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Fly') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/wind.png");
+menulist.eq(i).show();
+} else {
+menulist.eq(i).attr("src", iconurl);
+menulist.eq(i).show();
+}
+}
+</script>
+<!--------------------- 菜单栏图标加载功能👆 ----------------------->
+
+<script>
+    //--------------------bber-onetalk加载👇--------------------------------
+    function bberonetalkLoad(){
+        bberjsonurl = '';
+        if ( $("#bber-talk").length > 0 ) {
+        jsonUrl = bberjsonurl
+        $.getJSON(jsonUrl+"?t="+Date.parse( new Date()),function(res){
+        var bberHtml = ''
+        $.each(res.data, function(i, item){
+            d = new Date(item.date)
+            date = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate() +' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()
+            dataTime = '<span class="datatime">'+date+'</span>'
+            bberHtml += '<li class="item item-'+(i+1)+'">'+dataTime+'： <a data-pjax href="https://xmoct.github.io/bber">'+item.content+'</a></li>'
+        });
+        $('#bber-talk').append('<span class="index-talk-icon"><svg viewBox="0 0 1024 1024" width="21" height="21"><path d="M184.32 891.667692c-12.603077 0-25.206154-2.363077-37.809231-7.876923-37.021538-14.966154-59.864615-49.624615-59.864615-89.009231v-275.692307c0-212.676923 173.292308-385.969231 385.969231-385.969231h78.76923c212.676923 0 385.969231 173.292308 385.969231 385.969231 0 169.353846-137.846154 307.2-307.2 307.2H289.083077l-37.021539 37.021538c-18.904615 18.116923-43.323077 28.356923-67.741538 28.356923zM472.615385 195.347692c-178.018462 0-322.953846 144.935385-322.953847 322.953846v275.692308c0 21.267692 15.753846 29.144615 20.48 31.507692 4.726154 2.363077 22.055385 7.876923 37.021539-7.08923l46.473846-46.473846c6.301538-6.301538 14.178462-9.452308 22.055385-9.452308h354.461538c134.695385 0 244.184615-109.489231 244.184616-244.184616 0-178.018462-144.935385-322.953846-322.953847-322.953846H472.615385z"></path><path d="M321.378462 512m-59.076924 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M518.301538 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M715.224615 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153846 0 59.076923 59.076923 0 1 0-118.153846 0Z"></path></svg></span><ul class="talk-list">'+bberHtml+'</ul>')
+        //Lately({ 'target': '#bber-talk .datatime' });
+        });
+        function Roll (){
+        var list_li = $('.talk-list li'),cur_li = list_li.first(),last_li = list_li.last();
+        last_li.after(cur_li);
+        };
+        setInterval(Roll,3000);
+    }
+    }
+  //--------------------bber-onetalk加载👆--------------------------------
+</script>
+
+<script>
+    var ClicksideState = 1
+    var cur_readingmode = false
+    function readingmode(){
+        if (!cur_readingmode){
+            if(menupos == 'left'){
+                if(ClicksideState==1)
+                menu_openclose1()
+            }
+            $("#tab1").fadeOut(50)
+            $("#bg").fadeOut(50)
+            $(".navbar").fadeOut(50)
+            $(".markdownIt-TOC li a").css("color","black")
+            cur_readingmode = true
+        }else{
+            if(menupos == 'left'){
+                if(ClicksideState==0)
+                    menu_openclose1()
+            }
+            $("#tab1").fadeIn(50)
+            $("#bg").fadeIn(50)
+            $(".navbar").fadeIn(50)
+            $(".markdownIt-TOC li a").css("color","antiquewhite")
+            cur_readingmode = false  
+        }
+    }
+</script>
+
+
+<!----夜间模式👇-->
+<script>
+    var moonlightState = false
+    function moonlight(){
+        if(!moonlightState){
+            $("#bg").fadeOut(200)
+            $('body').css("background","rgba(224,255,255,0.8)")
+            $(".markdownIt-TOC li a").css("color","white")
+            $(".text p, .text ul").css("color","white")
+            $("#articlecontent").css("color","white")
+            $(".post-copyright").css("background","rgba(10,10,10,0.5)")
+            $('blockquote').css("background","rgba(10,10,10,0.6)")
+            $("#articlecontent").css("background","rgba(10,10,10,0.5)")
+            moonlightState = true
+            $(".moon").attr("src","https://xmoct.github.io/media/images/sun.png")
+        }else{
+            $("#bg").show()
+            $(".markdownIt-TOC li a").css("color","PaleTurquoise")
+            $(".text p, .text ul").css("color","rgba(0, 0, 0, 0.7)")
+            $("#articlecontent").css("color","black")
+            $(".post-copyright").css("background","#f9f9f9")
+            $('blockquote').css("background","#eff8f0")
+            $("#articlecontent").css("background","white")
+            $(".moon").attr("src","https://xmoct.github.io/media/images/moon.png")
+            $('body').css("background","LightCyan")
+            moonlightState = false
+        }
+    }
+</script>
+<!----夜间模式👆--></div>
+            <!--------------- pc端菜单栏👆 ---------------->
+
+            <!-- ----------------左侧菜单栏html 👇-------------------------------------->
+            
+            <div>
+                <div id="tab1" class="tab">
+                    <div class="bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="close"></div>
+                </div>
+                <div class="col-md-1 col-lg-3"></div>
+                <!-- main标签，pjax渲染时加载以下内容👇 -->
+                <div id="main" class="col-xs-12 col-sm-12 col-md-12 col-lg-7" style="padding:0;">
+                    <div class="readingmode" onclick="readingmode()">阅</div>
+                    <link rel="stylesheet" href="https://xmoct.github.io/media/css/font-awesome.css">
+
+<body>
+    <div class="allcontent" id="postdetail">
+        <div class="postshow postpadding" style="padding-bottom: 0;">
+            
+            <div class="postdetailimg">
+                
+                <img src="" class="postimage">
+                
+            </div>
+            <div class="postinfo-detail">
+                <div class="postdate"><i class="fa fa-calendar"></i>2023-07-25</div>
+            <div class="poststatus postdate"><i class="fa fa-clock-o"></i> 13 min read</div>
+            <div class="posttag">
+                
+            </div>
+        </div>
+        
+        <div id="articlecontent">
+            <div id="texttitle" style="text-align: center">
+                <h2 id="ptitle">HW渗透测试</h2>
+                <!-- id 将作为查询条件 -->
+                <div id="pl" style="display:none">https://xmoct.github.io/post/hw-shen-tou-ce-shi/</div>
+                <div id="rootaddr" style="display:none">https://xmoct.github.io</div>
+                
+            </div>
+            <div class="text ">
+                <h1 id="渗透">渗透</h1>
+<ul>
+<li>渗透的本质是信息收集（外网：资产，内网：网段、密码）<br>
+<strong>攻防的体系是知识点的串联（ATT&amp;CK）</strong><br>
+<code>https://blog.csdn.net/qq_40216188/article/details/123106969</code></li>
+</ul>
+<h2 id="打点">打点</h2>
+<h3 id="1对靶标的分析地级市">1.对靶标的分析(地级市)</h3>
+<p>在HW当中，获取到的靶标存在多种行业。对不同的靶标存在不同的打法，</p>
+<p>通常分为两个大方向。</p>
+<ul>
+<li>机关单位</li>
+<li>集团公司</li>
+</ul>
+<p>其中二者区别对攻击者而言，就是资产的散落程度。地级市的机关单位通常将网站托管在<em>政务云</em>(理论上政府网站不允许被托管到云上)，<em>大数据局</em>（内网横向）等。这意味着，通常两三个的C段部署着当地大量的机关单位网站集群。而集团公司等靶标应当采取“老式”的打点方式，所以接下来对两种打的方式进行打法剖析。</p>
+<h3 id="2工具的使用">2.工具的使用</h3>
+<p>对于机关单位的打法，因为其资产通常散落在多个大的C段当中，所以首要的目标就是对其C段权重的寻找。切入点应该选择手中的靶标为机关单位的目标，以此为点。</p>
+<p><strong>棱眼:</strong><br>
+<code>https://github.com/EdgeSecurityTeam/Eeyes</code></p>
+<p>对目标的子域对应IP进行C段权重的判断</p>
+<blockquote>
+<p>原理：（接口用FOFA），先将主域发到FOFA中，以duman语法去查询子域名，在根据子域映射ip地址（不会映射有CDN的，有CDN的映射ip毫无意义），将对应ip整理成c段，并告知信息<br>
+如果一个子域名在一个c段中出现次数越多，越有可能是主域的c段<br>
+<code>./Eeyes-darwin -f freebuf.com</code><br>
+如何确定C段的权重是否正确</p>
+</blockquote>
+<p><strong>棱洞:</strong><br>
+<code>https://github.com/EdgeSecurityTeam/EHole(FOFA)</code></p>
+<blockquote>
+<p>./EHole -f 110.242.68.1/24<br>
+补充：扫全端口 1-65535</p>
+</blockquote>
+<p>其对棱眼的C段权重进行IP资产列举,并进行指纹识别<br>
+接下来对其列举出来的指纹进行payload验证</p>
+<p>而对于集团公司的打法还是常用手法，oneForAll ，百分百控股..目录等等<br>
+常用的手法并非盲目测试payload，对目标框架的了解也是前提。<br>
+如<strong>React，Vue，AngularJS的XSS问题？</strong><br>
+（前端框架） jquery // vue {{var}}. v-html=var（xss基本没用）<br>
+<strong>springboot不解析jsp马的问题？</strong><br>
+（文件上传漏洞基本无效，打打反序列化就好） tomcat-jsper.（开发者有病）</p>
+<p><strong>Java应用的SQL注入应不应该打的问题？</strong><br>
+（HVV中基本没用）</p>
+<blockquote>
+<p>mysql 写文件 root ,绝对路径 udf username,password, c# mssql,oracle 写文件 root ,绝对路径 udf username,password （mysql+udf提权）<br>
+sqlserver 可以执行命令</p>
+</blockquote>
+<p>fofa的资产打开404真的是关站了嘛？(怕被通告就会关站，但可能功能比较重要，所以会迁移端口) 扫端口</p>
+<p>对目标技术栈springcloud分布式，k8s云新架构的入手点问题(软柿子捏的问题)等等，框架的演变史讲解</p>
+<blockquote>
+<p>jsp/servlet. &gt; ssh hiberna,spring,struts2. &gt; ssm mybatis,spring,springmvc &gt; springboot ssm 约定大于配置 =&gt; 前后端分离 json ajax 前端和 后端分开来部署 ==&gt; springcloud.分布式。</p>
+</blockquote>
+<p>我一直认为人是解决渗透难题的，并非需要把时间花费到基础漏洞上(与扫描的艺术大相径庭，只是内外网的区分)</p>
+<p><strong>Goby和Xray的结合往往效果显著</strong></p>
+<p>HW前通常会准备七八台云服务器（按量付费），部署Xray(红队破解版)和Goby(全端口，传言有红队破解版，但好像有病毒)，将信息搜集到的资产经过Goby的全端口扫描 (资产扫描，不做漏洞) 之后导出web服务转入（所有攻击通过服务器，不然容易封自己的ip）</p>
+<p>Xray和Rad的批量扫描。例如机关单位的几个C段进行Goby全端口扫描</p>
+<p>不要小看扫描器，他能发现很多人不能发现的脆弱点，经过很多次实践，发现Xray和Goby带给我了我很多意想不到的惊喜。</p>
+<h3 id="3资产的整理">3.资产的整理</h3>
+<p>渗透的本质是信息收集，我们应该把对于每个靶标的收集到的内容进行汇总填充到xlsx当中</p>
+<p>或许队友能打进去的点我们未必能进去，通过xlsx的表格和队友的对比能准确找到和队友信息收集到的内容差异。（多次同一地区的护网，可以看公司发展趋势/下次打护网可以更快）</p>
+<blockquote>
+<p>主域名 c段权重 子域名 端口 目录</p>
+</blockquote>
+<h2 id="上线">上线</h2>
+<p>很多时候，拿下的机器情况复杂多样。判断其出网性应该是首要工作。</p>
+<h3 id="1到底该不该上线">1.到底该不该上线</h3>
+<p>承认的是，MSF和CS都是及其出色的后渗透工具。但是面对这种复杂多样的环境，上不上线是个我们要去认真考虑的问题，CS和MSF究竟能给我们的后渗透能带来什么东西？</p>
+<p>假设目标不出网的情况，TCP不出网，DNS不出网，ICMP不出网，出口端口限制，对应这种种场合，Github上给了我们很多优秀项目的选择，但是是我们真的需要的嘛？</p>
+<p>例如DNS的CS上线，它可以帮助DNS隧道使我们上线CS，但是真正在实战中使用过就会发现，慢是他的一个很重要的一个弊端。一个抓取当前主机的密码我甚至需要等待两分钟。这个弊端甚至让我可以放弃使用它。</p>
+<p>................特征太明显了(容易被发现)...........红队最后就是自己的工具............<br>
+或许这样的上线也毫无意义，上线之后CS或者MSF给我们带来的东西不上线是否可以？在某些场景下，浪费很大的时间去上线cs这或许不值得。</p>
+<p>上线还需要免杀，不上线还可以借助webshell天然的免杀优势。当然，说这些是当我们在上线遇到无法阻碍的困难时应该考虑的，毫无疑问的是C2带来的利大于弊？？。</p>
+<h3 id="2工具的使用-2">2.工具的使用</h3>
+<p>JNA ------ 反弹shell -----自带java签名 -内存方式加载shellcode</p>
+<p>借助冰蝎本身的上线特性，其采用内存动态代理注入的形式进行上线，本身可以过掉不具备内存查杀的杀软给我们的上线犹如神助，且支持目标不出网的形式上线。(拖死进程)</p>
+<p>当然，我们也可以使用我们自己制作的EXE木马上传运行的方式，这种朴实无华的方式恰恰是最稳定的。</p>
+<p>发现进程中存在向日葵，TV等进行抓取密码进行远程桌面，这是再轻松不过的方式。</p>
+<p>上线的情况下，CS的socket4a隧道建立，MSF的socket5隧道的建立。或许socket4是CS的殇。</p>
+<p><code>https://github.com/L-codes/Neo-reGeorg</code> 这款工具让我们在不上线的情况下进行内网渗透</p>
+<p>如果出了些意外我们还可以使用冰蝎的代理</p>
+<p>通过端口映射的方式进行隧道代理，通过本地映射的方式进行隧道代理。这两种方式都为我们的后渗透提供了代理，但是稍微有点慢也是殇。</p>
+<p>值得一提的是</p>
+<p>值得一提的是，3389是永远的神。</p>
+<p>因为在后渗透的过程中会牵扯很多工具，这些大规模工具的免杀是一件成本很高的事情。</p>
+<p>如果3389对外开放，可以通过密码直接登录。</p>
+<p>不对外开放时，走隧道内网进行3389连接。</p>
+<p>如果版本高于2012密文解不开时，使用添加用户的api免杀进行用户添加，3389在当前桌面退出杀软，进行工具上传后渗透。</p>
+<p>没有隧道，没有免杀api等情况下，可以进行中找到向日葵，TV进程连接。进程中没有，可在文件中找到运行然后连接。</p>
+<p>都没有的情况下，可以尝试CS中的VNC的模块远程操控然后关闭杀软。</p>
+<h2 id="扫描">扫描</h2>
+<h3 id="1扫描的时间">1.扫描的时间</h3>
+<p>​ 随着内网安全设备的普及，各种行为都在日志捕捉在内展现给蓝方面前。至今好的绕过方法我还是没有找到，所以我们能做的就是去在蓝方下手，通常HW是24小时制，但是真正做到24小时制的或许只有金融行业。即使是半夜24小时制，夜晚的职守人员也会睡觉。所以，在生物学的角度考虑，傍晚的三四点是人困意最严重的时候，所以通常在此时进行内网大规模的扫描相对稳中求胜一点。</p>
+<blockquote>
+<p>自研工具<br>
+bp发包<br>
+纯手工</p>
+</blockquote>
+<h3 id="2扫描前的事项">2.扫描前的事项</h3>
+<p>扫描是最容易丢失权限的方式，其对内网机器发送大量的探测包触发报警。所以在扫描前应当注意权限维持，通常在拿下机器之后，首先在web目录下写入多个webshell，包括冰蝎，哥斯拉，蚁剑等等。但是这种情况针对目标没有关闭web服务，所以通常我还会创建计划任务等等，探测目标杀软进程，免杀的计划任务添加方式。</p>
+<p>当然，这或许还不是最保险的，如果其关闭当前服务器的情况下，将前功尽弃。所以，还会查看当前服务器的mstsc的登录记录，有时因为这种情况可能会获取到几台服务器权限做权限维持。然后当前机器关闭之后也无关痛痒。</p>
+<p>对连通网段的收集往往意味着这个内网能拿下多少分，网段越多资产越多</p>
+<blockquote>
+<p>常见的ipconfig    查看通向网段<br>
+netstat -ano           查看网段<br>
+route print             查看网段<br>
+arp -a                     查看网段</p>
+</blockquote>
+<p>这些命令都可以查看网段，但是这些网段远远不够。我通常使用御剑的b段80端口判断存活，这种暴力破解在我看来是最能细致入微的。<br>
+也可以使用fscan直接/8 ，/16去过。</p>
+<h3 id="3技巧扫描">3.技巧扫描</h3>
+<p>在我看来，拿下其内网的机器可能不需要很多漏洞。在内网，或许更重要的是凭据，也叫密码。我们应该去搜集机器上的所有密码，榨干这台机器的价值。或许我们在当前机器搜集到的3389密码，xlsx文档中的信息，翻阅web服务中配置文件中的密码，浏览器的记录，这些都会在SSH，3389，3306等等 需要登录的应用中派上用场，而不仅仅依赖”弱口令”。</p>
+<blockquote>
+<p>网段探活<br>
+1 广播-255 网关<br>
+1-50<br>
+50-100<br>
+22 ssh 协议识别 --- 看是不是ssh<br>
+3389<br>
+web + 爆破<br>
+扔到进程管理<br>
+指纹识别</p>
+</blockquote>
+<h2 id="复现写报告记得补图">复现（写报告）（记得补图）</h2>
+<h3 id="1思考工具">1.思考工具</h3>
+<p>我们应该去思考，当前我们使用的，以及市面上流传的工具仍然存在哪些不足，他缺少哪一部分？给我们的渗透还带来哪些阻力？怎么去解决。</p>
+<p>fscan是一款很好的工具，集成的各种服务的弱口令爆破，公开漏洞POC的检测。</p>
+<p>但是我在使用fscan的过程中发现以下弊端:</p>
+<ol>
+<li>
+<p>当前内网的连通性，如扫描前注意的事项中提到，连通的网段其实决定着这个网段可以拿下的分数，个人认为fscan缺少一个对连通的网段的判断。(当然，我现在仍然想 不出一个除了爆破以外的技术来准确判断连通网段)</p>
+</li>
+<li>
+<p>缺少对漏洞的复现，不得不承认的是，fscan的poc大多数来源于xray，这种yml的方式不可为不精彩。他的准确率很高，这点我们都清楚，但是对红队而言不是要我们清楚，更应该是裁判清楚。我们不能将扫描结果截图写上报告，这无论是在报告篇幅上还是规范性上都不合理。所以接下来我们需要对应不同的漏洞使用不同的工具进行复现，Navicat，浏览器代理，SSH连接等等进行截图…..可是内网的殇是隧道及其卡顿，这些工具发了多少“多余”的包……..</p>
+</li>
+</ol>
+<h3 id="2先使用在构思然后超越">2.先使用，在构思，然后超越</h3>
+<p>一个红队和一个安服的区别我认为在于 是否动手，同样在使用一款工具的时候，不管是红队还是安服，我认为都会去思考，这个工具不方便的地方在哪里，好用的地方在哪里。但是我认为一个专业的红队应该是在思考完这个工具的弊端之后想方设法去弥补 ，而安服却截然相反。这是一个落地的过程。</p>
+<p>所以针对上文提出的第二点，我对一些fscan中需要进行验证的漏洞写了一个框架</p>
+<p>如我们需要复现SSH的弱口令，写一款SSH认证的类，和命令执行的代码。</p>
+<p>然后调用此模块，执行whoami命令得到结果然后截图。做到的最小的发包量…..</p>
+<p>又例如redis，mysql等等</p>
+<p>mysql打印系统user表的内容，打印mysql系统版本</p>
+<p>以此类推，等等需要验证的模块，如果需要走隧道，</p>
+<p>只用在程序前加上一句话</p>
+<p>接下来所有的操作都会走隧道。</p>
+<p>就好比写了很多模块，这些模块支持任意模块的组合。</p>
+<p>还有扫描的艺术中技巧扫描提到的，或许当我们搜集到足够的密码凭据之后，内网不需要漏洞就能拿下很多。所以爆破模块的字典也可以自定义等</p>
+<p>但是值得一提的是，这套框架已经被我用Go语言替代提上了日程，go语言凭借其跨平台编译的优势让我放弃了Java。这也是我说的，再构思，显然这就是构思做的不到位。但是后来我又觉得，很多成功不正是无数次的失败积累而成…只有实践过才知道其中的坑有多少。</p>
+<h2 id="3思考">3.思考</h2>
+<p>我们都不是HW的机器人，记得一个大佬告诉我:”我们应该在每一次HW中回忆得失，思考这场HW能带给我们什么，我们学会了什么，而不是在意所谓的分数……”</p>
+
+            </div>
+            <hr style="width: 80%;">
+            
+            <div class="postfooter">
+                <ul class="post-copyright">
+                    <li><strong>文章作者：</strong>Moyv_xmoct</li>
+            <li><strong>原文链接：</strong>https://xmoct.github.io/post/hw-shen-tou-ce-shi/</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用<i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA
+                许可协议。转载请注明出处！</li>
+            </ul>
+        </div>
+        
+        <div id="otherpost">
+            
+            
+        </div>
+    </div>
+    </div>
+    </div>
+    <!-- 弹窗 -->
+    <div id="myModal" class="modal">
+        <img class="modal-content" id="img01">
+    </div>
+</body>
+<script>
+    //文章阅读热度
+    var pl = $("#pl").html();
+    var rootaddr = $("#rootaddr").html();
+    pl = pl.replace(rootaddr, "");
+    $("#hotnum").attr('id', pl);
+</script>
+                    <div class="toc-container">
+                        <ul class="markdownIt-TOC">
+<li><a href="#%E6%B8%97%E9%80%8F">渗透</a>
+<ul>
+<li><a href="#%E6%89%93%E7%82%B9">打点</a>
+<ul>
+<li><a href="#1%E5%AF%B9%E9%9D%B6%E6%A0%87%E7%9A%84%E5%88%86%E6%9E%90%E5%9C%B0%E7%BA%A7%E5%B8%82">1.对靶标的分析(地级市)</a></li>
+<li><a href="#2%E5%B7%A5%E5%85%B7%E7%9A%84%E4%BD%BF%E7%94%A8">2.工具的使用</a></li>
+<li><a href="#3%E8%B5%84%E4%BA%A7%E7%9A%84%E6%95%B4%E7%90%86">3.资产的整理</a></li>
+</ul>
+</li>
+<li><a href="#%E4%B8%8A%E7%BA%BF">上线</a>
+<ul>
+<li><a href="#1%E5%88%B0%E5%BA%95%E8%AF%A5%E4%B8%8D%E8%AF%A5%E4%B8%8A%E7%BA%BF">1.到底该不该上线</a></li>
+<li><a href="#2%E5%B7%A5%E5%85%B7%E7%9A%84%E4%BD%BF%E7%94%A8-2">2.工具的使用</a></li>
+</ul>
+</li>
+<li><a href="#%E6%89%AB%E6%8F%8F">扫描</a>
+<ul>
+<li><a href="#1%E6%89%AB%E6%8F%8F%E7%9A%84%E6%97%B6%E9%97%B4">1.扫描的时间</a></li>
+<li><a href="#2%E6%89%AB%E6%8F%8F%E5%89%8D%E7%9A%84%E4%BA%8B%E9%A1%B9">2.扫描前的事项</a></li>
+<li><a href="#3%E6%8A%80%E5%B7%A7%E6%89%AB%E6%8F%8F">3.技巧扫描</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%8D%E7%8E%B0%E5%86%99%E6%8A%A5%E5%91%8A%E8%AE%B0%E5%BE%97%E8%A1%A5%E5%9B%BE">复现（写报告）（记得补图）</a>
+<ul>
+<li><a href="#1%E6%80%9D%E8%80%83%E5%B7%A5%E5%85%B7">1.思考工具</a></li>
+<li><a href="#2%E5%85%88%E4%BD%BF%E7%94%A8%E5%9C%A8%E6%9E%84%E6%80%9D%E7%84%B6%E5%90%8E%E8%B6%85%E8%B6%8A">2.先使用，在构思，然后超越</a></li>
+</ul>
+</li>
+<li><a href="#3%E6%80%9D%E8%80%83">3.思考</a></li>
+</ul>
+</li>
+</ul>
+
+                    </div>
+                    <div class="tog">
+                        <div class="toggleContainer">
+                            <div class="toggle">
+                                <i class="fas fa-angle-double-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👇 ------------------------->
+                    <div id="comment" class="comment">
+                        <div class="commentcontainer">
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👆 ------------------------->
+                </div>
+                <!-- main标签，pjax渲染时加载以上内容👆 -->
+                <div class="col-md-1 col-lg-2"></div>
+                <div id="bg">
+                </div>
+            </div>
+            <!-- ----------------左侧菜单栏html 👆-------------------------------------->
+            
+        </div>
+        <!-- aplayer播放器加载👇 -->
+            
+        <!-- aplayer播放器加载👆 -->
+    </div>
+    <!-- 背景图加载方式👇 -->
+    <div id="bgchoice" style="display: none">link
+                </div>
+                
+                <div id="bgurl" style="display:none"></div>
+                
+    <!-- 背景图加载方式👆 -->
+</body>
+
+<script>
+    //初始化
+    //更换twikoo头像
+    setTimeout(replaceAvatar,1000);
+    setTimeout(replaceAvatar,2000);
+    setTimeout(replaceAvatar,8000);
+    // --------为每张图片添加懒加载（lazyload）标签-->懒加载功能 👇------------
+    lazyload();
+    //为文章内所有代码块添加代码复制功能 👇
+    codeinit();
+    // ------代码高亮显示功能-------------
+    hljs.initHighlightingOnLoad();
+    if (shareChoice)
+        shareInit();
+    if (donateChoice)
+        donateInit();
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👇 ---------------->
+
+<script type="text/javascript">
+    var message_Path = '/live2d/'
+    var home_Path = document.getElementById("domainname").innerHTML + "/"; //此处修改为你的域名，必须带斜杠
+</script>
+<script type="text/javascript" src="https://xmoct.github.io/media/js/live2d.js"></script>
+<script type="text/javascript" src="https://xmoct.github.io/media/live2d/js/message.js"></script>
+<script type="text/javascript">
+    loadlive2d("live2d", "https://xmoct.github.io/media/live2d/assets/tororo.model.json");
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👆 ---------------->
+
+
+<!----------------------- 返回顶部按钮功能👇 --------------------->
+<script>
+    $(function () {
+        $('.toggleContainer').click(function () {
+            $('html,body').animate({
+                scrollTop: '0px'
+            }, 800);
+        });
+        $(window).scroll(function () {
+            var st = $(window).scrollTop();
+            if (st > 30) {
+                $(".toggleContainer").fadeIn(400);
+            } else {
+                $(".toggleContainer").fadeOut(100);
+            }
+        });
+    });
+</script>
+<!----------------------- 返回顶部按钮功能👆 --------------------->
+
+
+<!------------ 加载全局背景图功能👇（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+<script>
+    var bgchoice = "link"
+    var bg = $('#bg');
+    var bgurl = document.getElementById("bgurl").innerHTML;
+    if (bgchoice == 'default')
+    {
+        for (var i = 0; i < 3; i++)
+            bgurl = bgurl.replace("\\", "/");
+        bgurl = "https://xmoct.github.io/" + bgurl;
+    }
+    bg.css("background", "url('" + bgurl + "')");
+
+    window.onload = function () {
+        aplayerbtnInit();
+    }
+</script>
+<!------------ 加载全局背景图功能👆（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+
+
+
+
+<script src="https://xmoct.github.io/media/js/index.js"></script>
+
+
+<script>
+    //加载后的事件同步（阅读量、移动端评论等
+    window.onload = function () {
+    //代码块高亮渲染
+    document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+    });
+        getHotnum();
+        var sharepc = $(".share").eq(0).html();
+        $(".share").eq(1).html(sharepc);   //插件只会寻找一个分享标签渲染，所以需要手动添加到移动端
+        aplayerbtnInit();
+        $(".hljs").css({
+            "padding": "20px"
+        })
+    }
+</script>
+
+<!-- <script src="https://xmoct.github.io/media/js/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.6.1/dist/av-live-query-min.js"></script> -->

